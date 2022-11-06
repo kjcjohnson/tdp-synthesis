@@ -4,6 +4,12 @@
 (in-package #:com.kjcjohnson.tdp.enumerative)
 (kl/oo:import-classes-from #:vsa)
 
+(defun $debug-break (program)
+  (when
+      (string= "#<PROGRAM-NODE $eval($concat($char_1,$or($char_1,$char_2)))>"
+               (format nil "~a" program))
+    (break)))
+
 (defmethod tdp:synthesize* ((obj (eql 'enumerative-filter-task))
                             nt-or-prod
                             (info enumerator-info))
@@ -26,10 +32,11 @@
                    (< (ast:program-size candidate)
                       (ast:program-size min-prog)))
                (every #'(lambda (exs)
-                          (equal (ast:execute-program tdp:*semantics*
-                                                      candidate
-                                                      (car exs))
-                                 (cadr exs)))
+                          ;;($debug-break candidate)
+                          (smt:state= (ast:execute-program tdp:*semantics*
+                                                           candidate
+                                                           (car exs))
+                                      (cadr exs)))
                       (mapcar #'list (inputs info) (outputs info))))
           (setf min-prog candidate)
           (format t "~&Good [~s]: ~a~%" (ast:program-size candidate) candidate))
@@ -41,4 +48,7 @@
                   (float (/ a-count t-count)))
           (setf next-checkpoint (+ 10 (get-universal-time))
                 p-count 0)))
-    min-prog)))
+      
+      (if (null min-prog)
+          (empty-program-node:new)
+          (leaf-program-node:new min-prog)))))
