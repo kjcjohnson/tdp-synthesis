@@ -62,9 +62,10 @@
 ;;;
 ;;; Inference - call our witness functions
 ;;;
-(defmethod tdp::infer ((prod g:production) child-index context-info)
+(defmethod tdp::infer ((prod g:production) child-index outer-spec context)
+  (declare (ignore context))
   (let ((prod-name (g:name prod))
-        (output (output context-info)))
+        (output (output outer-spec)))
     (if (and
          (not (consp output))
          (string= prod-name "Constant")
@@ -73,13 +74,18 @@
         output
     
         (make-instance 'pp-info
-                       :input (input context-info)
+                       :input (input outer-spec)
                        :output (funcall (witness-functions tdp::*algorithm*)
                                         prod-name
                                         child-index
                                         output)))))
 
-(defmethod tdp::derive ((prod g:production) child-index prog-set context-info)
+(defmethod tdp::derive ((prod g:production)
+                        child-index
+                        prog-set
+                        outer-spec
+                        context-info)
+  (declare (ignore prod child-index prog-set outer-spec context-info))
   nil)
 
 ;;;
