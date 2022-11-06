@@ -1,0 +1,180 @@
+(in-package #:com.kjcjohnson.tdp.duet)
+
+(defclass universal-context ()
+  ((programs :initarg :programs)
+   (outputs :initarg :outputs)
+   (prereqs :initarg :prereqs)))
+
+(defclass duet-up-info ()
+  ((programs :initarg :programs)
+   (outputs :initarg :outputs)))
+
+(defclass us-results ()
+  ((child-results :initarg :child-results))) ; List of children
+
+(defclass us-child-result ()
+  ((prereqs :initarg :prereqs)
+   (results :initarg :results)))
+
+(defclass us-prereqs ()
+  ((programs :initarg :programs)
+   (outputs :initarg :outputs)))
+
+(defclass us-results ()
+  ((programs :initarg :programs)
+   (outputs :initarg :outputs)))
+
+
+;;;
+;;; Universal search
+;;;
+(defclass universal-search-strategy ()
+  ((info :initarg :info)
+   (done :initarg :done)))
+
+(defclass universal-search-state ()
+  ((programs :initarg :programs :accessor uss-programs)
+   (child-ix :initarg :child-ix :accessor uss-child-ix)
+   (sub-ix :initarg :sub-ix :accessor uss-sub-ix)))
+
+#|(defmethod tdp:get-search-strategy ((algorithm duet-algorithm)
+                                    nt-or-prod
+                                    (info duet-information))
+  (values (make-instance 'universal-search-strategy
+                         :info info
+                         :done (make-list (g:arity nt-or-prod)))
+          (make-instance 'universal-search-state
+                         :programs nil
+                         :child-ix 0
+                         :sub-ix 0)))|#
+  
+(defmethod tdp:is-search-done ((prod g:production)
+                               (strategy universal-search-strategy)
+                               state)
+  (>= (uss-child-ix state) (length (g:occurrences prod))))
+
+(defmethod tdp:get-next-search-query ((prod g:production)
+                                      (strategy universal-search-strategy)
+                                      state)
+  ;;
+  ;; Return value: NT value, index, context
+  ;;
+  (if (zerop (uss-child-ix state))
+      (values (first (g:occurrences prod))
+              0
+              (make-instance 'universal-context
+                             :prereqs nil
+                             :outputs nil
+                             :programs nil))
+      (values (nth (uss-child-ix state) (g:occurrences prod))
+              (uss-child-ix state)
+              (nth (uss-sub-ix state)
+                   (nth (uss-child-ix state) (slot-value strategy 'done))))))
+
+(defmethod tdp:search-transition ((prod g:production)
+                                  (strategy universal-search-strategy)
+                                  state
+                                  prog-set
+                                  up-info)
+  (push up-info (nth (uss-child-ix state) (slot-value strategy 'done)))
+  (let ((sub-ix (1+ (uss-sub-ix state)))
+        (child-ix (uss-child-ix state)))
+    (when (>= sub-ix (length (nth child-ix (slot-value strategy 'done))))
+      (setf sub-ix 0
+            child-ix (1+ child-ix)))
+    (make-instance 'universal-search-state
+                   :programs (append (uss-programs state) (list prog-set))
+                   :child-ix child-ix
+                   :sub-ix sub-ix)))
+
+(defmethod tdp:get-search-result ((prod g:production)
+                                  (strategy universal-search-strategy)
+                                  state)
+  (let ((info (slot-value strategy 'info)))
+    (vsa:filter
+     (tdp:combine prod (uss-programs state) info)
+     (duet-information:inputs info)
+     (duet-information:outputs info)
+     tdp:*semantics*)))
+
+
+(defun universal-witness (prod child-ix ctx)
+  (declare (ignore prod child-ix ctx))
+  :top)
+
+(defun transpose-context (context target-length)
+  (let* ((ctx-list (loop for i from 0 below (tdp::arity context)
+                         collecting (tdp:context.up i context))))
+    (loop for i from 0 below target-length
+          collecting (map 'list #'(lambda (s) (nth i s)) ctx-list))))
+
+(defmethod tdp:infer ((prod g:production)
+                      child-ix
+                      (outer-spec duet-information)
+                      context)
+  (let* ((pn (g:name prod))
+         (info (duet-information:copy outer-spec))
+         (inv (get-inverse-semantics pn child-ix)))
+    
+    (setf (duet-information:check-library? info) t)
+    (cond
+      ((not (null inv))
+       (let* ((trans-ctx (transpose-context context
+                                            (length
+                                             (duet-information:outputs info))))
+              (witnessed
+                (map 'list inv
+                     (duet-information:inputs info)
+                     (duet-information:outputs info)
+                     trans-ctx)))
+         (if (some #'listp witnessed)
+             (progn
+               (if (some #'null witnessed)
+                   (setf info nil)
+                   (progn
+                     (tdp:all-cart-prod witnessed)
+                     ))
+               )
+             (progn
+               (setf (duet-information:outputs info) witnessed)
+               (when (some #'null (duet-information:outputs info))
+                 (setf info nil)))))
+       info)
+      
+      ;;;((and (equalp pn "+") (= 1 child-ix))
+      ;;; (setf (duet-information:outputs info)
+      ;;;       (map 'list #'(lambda (o c)
+      ;;;                      (- o c))
+      ;;;            (duet-information:outputs info)
+      ;;;            (tdp:context.up 0 context)))
+      ;;; ;; Enforce termination. The paper says _original_ output values,
+      ;;; ;; so we may need to modify this to use the problem outputs
+      ;;; (when (some #'(lambda (new orig) (> (abs new) 12))
+      ;;;             (duet-information:outputs info)
+      ;;;             (duet-information:outputs outer-spec))
+      ;;;   (setf info nil))
+      ;;; info)
+
+      (t
+       (universal-witness prod child-ix outer-spec)))))
+  ;;nil)
+
+(defmethod tdp:derive ((prod g:production)
+                       child-ix
+                       program-set
+                       (outer-spec duet-information)
+                       context)
+  (let (up)
+    (kl:foreach (program in program-set)
+      (push
+       (cons
+        (map 'list #'(lambda (input)
+                       (ast:execute-program tdp:*semantics* program input))
+             (duet-information:inputs outer-spec))
+        (leaf-program-node:new program))
+       up))
+    up))
+
+    ;(make-instance 'duet-up-info
+    ;               :programs programs
+    ;               :outputs outputs)))

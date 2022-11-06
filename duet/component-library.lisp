@@ -21,28 +21,33 @@
                                      :prune t
                                      :inputs inputs)))
             (kl:foreach (nt in (g:non-terminals tdp:*grammar*))
-              (&dictionary:add _components
-                               nt
-                               (tdp:synthesize nt info)))))
+              (let ((comps (tdp:synthesize nt info)))
+                (format *trace-output* "~&;;   Got ~a components for ~a~%"
+                        (program-node:program-count comps) nt)
+                (&dictionary:add _components
+                                 nt
+                                 comps)))))
 
   (public get-components (nt)
           (&dictionary:try-get-value _components nt)))
 
 
 (defvar *component-library*)
+(defvar *component-depth-override* 3)  ; depth = 4 causes OOM errors for now
 
 (defmethod tdp:synthesize* ((obj (eql 'component-library-generate))
                             nt-or-prod
                             info)
   "Generates and uses a component library, a la Duet."
   (let ((*component-library* (component-library:new)))
-    (loop for depth from 1 to 3 ; depth = 4 causes OOM errors for now
+    (loop for depth from 1 to *component-depth-override*
           for programs = (progn
                            (format t "; Enumerating to depth: ~a~%" depth)
                            (component-library:enumerate-to-depth
                             *component-library*
                             depth
                             (slot-value info 'inputs))
+                           (run-reset-hooks tdp:*algorithm*)
                            (tdp:synthesize nt-or-prod info))
           while (zerop (program-node:program-count programs))
           finally (return programs))))
@@ -62,12 +67,13 @@
                              *component-library*
                              nt))
     (when (every #'(lambda (input output)
-                     (equal (ast:execute-program tdp:*semantics*
-                                                 candidate
-                                                 input)
-                            output))
+                     (smt:state= (ast:execute-program tdp:*semantics*
+                                                      candidate
+                                                      input)
+                                 output))
                  (slot-value info 'inputs)
                  (slot-value info 'outputs))
+      
       (return-from tdp:synthesize* (leaf-program-node:new candidate))))
 
   (let ((new-info (duet-information:copy info)))

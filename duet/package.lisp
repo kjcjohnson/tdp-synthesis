@@ -9,6 +9,8 @@
                     (#:g #:com.kjcjohnson.synthkit.grammar)
                     (#:ast #:com.kjcjohnson.synthkit.ast)
                     (#:vsa #:com.kjcjohnson.synthkit.vsa)
+                    (#:smt #:com.kjcjohnson.synthkit.smt)
+                    (#:semgus #:com.kjcjohnson.synthkit.semgus)
                     (#:enum #:com.kjcjohnson.tdp.enumerative)
                     (#:kl #:com.kjcjohnson.kale)
                     (#:kl/oo #:com.kjcjohnson.kale.oo)
