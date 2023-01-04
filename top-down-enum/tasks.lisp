@@ -64,11 +64,13 @@
                  size
                  pq)
                 (when (every #'(lambda (ex)
-                                 (smt:state=
-                                  (ast:execute-program tdp:*semantics*
-                                                       (program pr)
-                                                       (semgus:example-input ex)) 
-                                  (semgus:example-output ex)))
+                                 (semgus:with-example (input output descriptor ex)
+                                   (smt:state=
+                                    (ast:execute-program tdp:*semantics*
+                                                         descriptor
+                                                         (program pr)
+                                                         input) 
+                                    output)))
                              (semgus:examples (specification info)))
                   (format t "FOUND: [~a] ~a~%" size (program pr))
                   (return-from tdp:synthesize*

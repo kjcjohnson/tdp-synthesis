@@ -7,7 +7,8 @@
   ((depth :initarg :max-depth)
    (prune :initarg :prune :initform nil)
    (inputs :initarg :inputs :reader inputs)
-   (outputs :initarg :outputs :reader outputs)))
+   (outputs :initarg :outputs :reader outputs)
+   (descriptors :initarg :descriptors :reader descriptors)))
 
 (defun make-enumerator-info (semgus-problem &key (max-depth 4) (prune t))
   "Creates enumerator info for a SemGuS problem"
@@ -22,7 +23,12 @@
                                #'semgus:example-output
                                 (semgus:examples 
                                  (semgus:specification
-                                  semgus-problem)))))
+                                  semgus-problem)))
+                 :descriptors (map 'list
+                                   #'semgus:example-descriptor
+                                   (semgus:examples
+                                    (semgus:specification
+                                     semgus-problem)))))
 
 (defmethod print-object ((info enumerator-info) stream)
   "Prints the enumerator information"

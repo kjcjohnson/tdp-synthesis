@@ -7,12 +7,14 @@
   :documentation "Specification for a Duet problem."
   (public property inputs)
   (public property outputs)
+  (public property descriptors)
   (public property refinement)
   (public property check-library?)
 
   (public constructor ()
           (setf inputs nil
                 outputs nil
+                descriptors nil
                 refinement nil
                 check-library? t))
   
@@ -20,6 +22,7 @@
           (let ((other (make-instance 'duet-information)))
             (setf (kl/oo:property-invoke other :inputs) inputs
                   (kl/oo:property-invoke other :outputs) outputs
+                  (kl/oo:property-invoke other :descriptors) descriptors
                   (kl/oo:property-invoke other :refinement) refinement
                   (kl/oo:property-invoke other :check-library?) check-library?)
             other)))
@@ -46,6 +49,8 @@
                   (duet-information:inputs b))
        (kl:equals (duet-information:outputs a)
                   (duet-information:outputs b))
+       (kl:equals (duet-information:descriptors a)
+                  (duet-information:descriptors b))
        (kl:equals (duet-information:refinement a)
                   (duet-information:refinement b))
        (kl:equals (duet-information:check-library? a)
@@ -56,6 +61,7 @@
   (logxor
    (sxhash (duet-information:inputs obj))
    (sxhash (duet-information:outputs obj))
+   (sxhash (duet-information:descriptors obj))
    (kl:get-hash-code (duet-information:refinement obj))
    (sxhash (duet-information:check-library? obj))))
 
@@ -63,7 +69,8 @@
   "Prints a duet information object"
   (print-unreadable-object (info stream :type t)
     (format stream
-            "~s ~~~~> ~s [LIB? ~s]"
+            "~s ~~~~> ~s {~s} [LIB? ~s]"
             (duet-information:inputs info)
             (duet-information:outputs info)
+            (duet-information:descriptors info)
             (duet-information:check-library? info))))

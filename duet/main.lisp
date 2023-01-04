@@ -19,6 +19,11 @@
                #'semgus:example-output
                (semgus:examples
                 (semgus:specification semgus-problem))))
+    (setf (duet-information:descriptors info)
+          (map 'list
+               #'semgus:example-descriptor
+               (semgus:examples
+                (semgus:specification semgus-problem))))
     (tdp::tdp-s semgus-problem
                 (make-instance 'duet-algorithm)
                 info)))

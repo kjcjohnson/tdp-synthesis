@@ -72,5 +72,6 @@
           (list (union-program-node:new kept-programs)
                 (union-program-node:new rand-programs)))
          (enum::inputs info)
-         tdp:*semantics*)))))
+         tdp:*semantics*
+         (enum::descriptors info))))))
 

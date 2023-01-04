@@ -15,11 +15,12 @@
   (public constructor ()
           (setf _components (dictionary:new)))
 
-  (public enumerate-to-depth (depth inputs)
+  (public enumerate-to-depth (depth inputs descriptors)
           (let ((info (make-instance 'enum:enumerator-info
                                      :max-depth depth
                                      :prune t
-                                     :inputs inputs)))
+                                     :inputs inputs
+                                     :descriptors descriptors)))
             (kl:foreach (nt in (g:non-terminals tdp:*grammar*))
               (let ((comps (tdp:synthesize nt info)))
                 (format *trace-output* "~&;;   Got ~a components for ~a~%"
@@ -46,7 +47,8 @@
                            (component-library:enumerate-to-depth
                             *component-library*
                             depth
-                            (slot-value info 'inputs))
+                            (slot-value info 'inputs)
+                            (slot-value info 'descriptors))
                            (run-reset-hooks tdp:*algorithm*)
                            (tdp:synthesize nt-or-prod info))
           while (zerop (program-node:program-count programs))
@@ -66,16 +68,17 @@
   (kl:foreach (candidate in (component-library:get-components
                              *component-library*
                              nt))
-    (when (every #'(lambda (input output)
+    (when (every #'(lambda (input output descriptor)
                      (smt:state= (ast:execute-program tdp:*semantics*
+                                                      descriptor
                                                       candidate
                                                       input)
                                  output))
                  (slot-value info 'inputs)
-                 (slot-value info 'outputs))
-      
+                 (slot-value info 'outputs)
+                 (slot-value info 'descriptors))
       (return-from tdp:synthesize* (leaf-program-node:new candidate))))
-
+  
   (let ((new-info (duet-information:copy info)))
     (setf (duet-information:check-library? new-info) nil)
     (let* ((res (tdp:synthesize nt new-info))

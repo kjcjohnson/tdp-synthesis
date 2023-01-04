@@ -9,13 +9,14 @@
 (defclass constant-program-node (ast:program-node)
   ((value :reader node-value :initarg :value)))
 
-(defmethod ast:operational-semantics-for-production ((sem semgus::default-semantics)
+#|(defmethod ast:operational-semantics-for-production ((sem semgus::default-semantics)
                                                      prod
                                                      (node constant-program-node))
   "Returns the value of a constant program node."
   (list #'(lambda (is)
             (declare (ignore is))
             (node-value node))))
+|#
 
 (defmethod ast::print-program-node ((node constant-program-node) stream)
   "Pretty-prints a constant program node."

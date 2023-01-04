@@ -13,7 +13,8 @@
         (make-instance 'enumerator-info
                        :max-depth (1- (slot-value info 'depth))
                        :prune (slot-value info 'prune)
-                       :inputs (slot-value info 'inputs))
+                       :inputs (slot-value info 'inputs)
+                       :descriptors (slot-value info 'descriptors))
         nil)))
 
 (defmethod tdp:derive ((prod g:production)

@@ -107,13 +107,21 @@
                        context)
   (let (up)
     (kl:foreach (program in program-set)
-      (push
-       (cons
-        (map 'list #'(lambda (input)
-                       (ast:execute-program tdp:*semantics* program input))
-             (duet-information:inputs outer-spec))
-        (leaf-program-node:new program))
-       up))
+      (let ((descriptors (ast:semantics-descriptors-for-non-terminal
+                          tdp:*semantics*
+                          (g:instance (ast:production program)))))
+        (when (> (length descriptors) 1)
+          (error "Cannot derive when multiple matching descriptors"))
+        (push
+         (cons
+          (map 'list #'(lambda (input)
+                         (ast:execute-program tdp:*semantics*
+                                              (first descriptors)
+                                              program
+                                              input))
+               (duet-information:inputs outer-spec))
+          (leaf-program-node:new program))
+       up)))
     up))
 
     ;(make-instance 'duet-up-info

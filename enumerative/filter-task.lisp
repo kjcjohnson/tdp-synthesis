@@ -17,7 +17,8 @@
   (let* ((new-info (make-instance 'enumerator-info
                                   :max-depth (slot-value info 'depth)
                                   :prune (slot-value info 'prune)
-                                  :inputs (slot-value info 'inputs)))
+                                  :inputs (slot-value info 'inputs)
+                                  :descriptors (slot-value info 'descriptors)))
          (programs (tdp:synthesize nt-or-prod new-info)))
 
     (let (min-prog
@@ -34,10 +35,14 @@
                (every #'(lambda (exs)
                           ;;($debug-break candidate)
                           (smt:state= (ast:execute-program tdp:*semantics*
+                                                           (third exs)
                                                            candidate
-                                                           (car exs))
-                                      (cadr exs)))
-                      (mapcar #'list (inputs info) (outputs info))))
+                                                           (first exs))
+                                      (second exs)))
+                      (mapcar #'list
+                              (inputs info)
+                              (outputs info)
+                              (descriptors info))))
           (setf min-prog candidate)
           (format t "~&Good [~s]: ~a~%" (ast:program-size candidate) candidate))
         (incf p-count)

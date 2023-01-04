@@ -13,11 +13,13 @@
                   (map 'list
                        #'(lambda (x) (program-node:program-count x))
                        children)))
-           
   (let ((ret
           (if (not (slot-value info 'prune))
               (union-program-node:new children)
-              (vsa:prune children (inputs info) tdp:*semantics*))))
+              (vsa:prune children
+                         (inputs info)
+                         tdp:*semantics*
+                         (descriptors info)))))
     '(format *trace-output*
             ";AP: ~a~%"
             (program-node:program-count ret))
