@@ -17,4 +17,5 @@
                     (#:kl/c #:com.kjcjohnson.kale.collections))
 
   (:export #:component-library-generate
-           #:component-library-task))
+           #:component-library-task
+           #:duet-solve))

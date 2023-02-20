@@ -15,4 +15,6 @@
                     (#:kl/c #:com.kjcjohnson.kale.collections))
 
   (:export #:enumerative-filter-task
-           #:enumerator-info))
+           #:enumerator-info
+           #:enum-solve
+           #:enum-solve*))

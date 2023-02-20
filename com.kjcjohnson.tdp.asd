@@ -84,3 +84,15 @@
                 :pathname "../benchmarks"
                 :components ((:file "max2-exp")
                              (:file "dr-name")))))
+
+(asdf:defsystem "com.kjcjohnson.tdp/ks2"
+  :depends-on ("com.kjcjohnson.tdp"
+               "com.kjcjohnson.frangel"
+               "com.kjcjohnson.ks2/solver-api")
+  :pathname "ks2"
+  :serial t
+  :components ((:file "package")
+               (:file "top-down-enum")
+               (:file "duet")
+               (:file "frangel")
+               (:file "bottom-up-enum")))

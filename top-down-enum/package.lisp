@@ -14,4 +14,4 @@
                     (#:kl/oo #:com.kjcjohnson.kale.oo)
                     (#:kl/c #:com.kjcjohnson.kale.collections))
 
-  (:export))
+  (:export #:top-down-enum-solve))
