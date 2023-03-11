@@ -12,23 +12,14 @@
 
 (defun make-enumerator-info (semgus-problem &key (max-depth 4) (prune t))
   "Creates enumerator info for a SemGuS problem"
-  (make-instance 'enumerator-info
-                 :max-depth max-depth
-                 :prune prune
-                 :inputs (map 'list
-                              #'semgus:example-input
-                               (semgus:examples 
-                                (semgus:specification semgus-problem)))
-                 :outputs (map 'list
-                               #'semgus:example-output
-                                (semgus:examples 
-                                 (semgus:specification
-                                  semgus-problem)))
-                 :descriptors (map 'list
-                                   #'semgus:example-descriptor
-                                   (semgus:examples
-                                    (semgus:specification
-                                     semgus-problem)))))
+  (assert (spec:is-pbe? (semgus:specification semgus-problem)))
+  (let ((examples (spec:examples (semgus:specification semgus-problem))))
+    (make-instance 'enumerator-info
+                   :max-depth max-depth
+                   :prune prune
+                   :inputs (map 'list #'spec:input-state examples)
+                   :outputs (map 'list #'spec:output-state examples)
+                   :descriptors (map 'list #'spec:descriptor examples))))
 
 (defmethod print-object ((info enumerator-info) stream)
   "Prints the enumerator information"

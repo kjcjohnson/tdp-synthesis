@@ -13,6 +13,7 @@
   :symbol "fragment-search"
   :description "Generates programs randomly, using fragments of partial programs"
   :action "Fragment Search"
+  :spec-transformer #'%io-and-cegis-spec-transformer
   :options (list))
 
 (defmethod solve-problem ((solver (eql :frangel)) semgus-problem &key)

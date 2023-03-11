@@ -10,6 +10,7 @@
   :symbol "bottom-up-enum"
   :description "A depth-bounded depth-first bottom-up enumerative solver"
   :action "Bottom-up Solve"
+  :spec-transformer #'%io-and-cegis-spec-transformer
   :options (list
             (make-solver-option :keyword :max-depth
                                 :name "max-depth"

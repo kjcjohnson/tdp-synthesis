@@ -30,7 +30,7 @@
     ;;
     (setf chcs (remove-if-not #'(lambda (chc)
                                   (eql (g:name (g:operator production))
-                                       (semgus:name (semgus:constructor chc))))
+                                       (chc:name (chc:constructor chc))))
                               chcs))
 
     ;;
@@ -38,7 +38,7 @@
     ;;
     (let ((names (map 'list
                       #'(lambda (chc)
-                          (let ((constraint (semgus:constraint chc))
+                          (let ((constraint (chc:constraint chc))
                                 (name nil))
                             (cond
                               ;;

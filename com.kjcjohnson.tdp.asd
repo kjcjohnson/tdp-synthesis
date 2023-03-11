@@ -92,6 +92,7 @@
   :pathname "ks2"
   :serial t
   :components ((:file "package")
+               (:file "utility")
                (:file "top-down-enum")
                (:file "duet")
                (:file "frangel")

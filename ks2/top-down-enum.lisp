@@ -10,6 +10,7 @@
   :symbol "top-down-enum"
   :description "A standard top-down enumerative solver"
   :action "TDE Solve"
+  :spec-transformer #'%io-and-cegis-spec-transformer
   :options (list))
 
 (defmethod solve-problem ((solver (eql :top-down-enum)) semgus-problem &key)

@@ -6,24 +6,17 @@
 
 (defun duet-solve* (semgus-problem)
   "Implementation for solving a problem with the Duet solver"
-  (let ((info (duet-information:new)))
+  (assert (spec:is-pbe? (semgus:specification semgus-problem)))
+  (let ((info (duet-information:new))
+        (examples (spec:examples (semgus:specification semgus-problem))))
     (setf (duet-information:check-library? info)
           t)
     (setf (duet-information:inputs info)
-          (map 'list
-               #'semgus:example-input
-               (semgus:examples
-                (semgus:specification semgus-problem))))
+          (map 'list #'spec:input-state examples))
     (setf (duet-information:outputs info)
-          (map 'list
-               #'semgus:example-output
-               (semgus:examples
-                (semgus:specification semgus-problem))))
+          (map 'list #'spec:output-state examples))
     (setf (duet-information:descriptors info)
-          (map 'list
-               #'semgus:example-descriptor
-               (semgus:examples
-                (semgus:specification semgus-problem))))
+          (map 'list #'spec:descriptor examples))
     (tdp::tdp-s semgus-problem
                 (make-instance 'duet-algorithm)
                 info)))

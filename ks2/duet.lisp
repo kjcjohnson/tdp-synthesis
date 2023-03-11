@@ -10,6 +10,7 @@
   :symbol "duet"
   :description "Combines bottom-up enumeration with top-down propagation"
   :action "Duet Solve"
+  :spec-transformer #'%io-and-cegis-spec-transformer
   :options (list (make-solver-option :keyword :depth
                                      :name "depth"
                                      :description "Maximum depth to enumerate"

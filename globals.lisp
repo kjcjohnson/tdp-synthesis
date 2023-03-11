@@ -108,6 +108,7 @@ run will continue. Otherwise, an error condition is signalled.")
         (*grammar* grammar)
         (*semantics* semantics))
     (map nil #'(lambda (hook) (funcall (cdr hook))) *init-hooks*)
+
     (let ((result (synthesize (g:initial-non-terminal *grammar*) info))
           (result-list nil))
       

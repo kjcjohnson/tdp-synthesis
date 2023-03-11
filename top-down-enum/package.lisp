@@ -10,6 +10,7 @@
                     (#:vsa #:com.kjcjohnson.synthkit.vsa)
                     (#:semgus #:com.kjcjohnson.synthkit.semgus)
                     (#:smt #:com.kjcjohnson.synthkit.smt)
+                    (#:spec #:com.kjcjohnson.synthkit.specification)
                     (#:kl #:com.kjcjohnson.kale)
                     (#:kl/oo #:com.kjcjohnson.kale.oo)
                     (#:kl/c #:com.kjcjohnson.kale.collections))

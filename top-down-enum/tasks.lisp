@@ -27,6 +27,32 @@
   (unless (slot-boundp e 'has-hole?)
     (setf (slot-value e 'has-hole?) (ast:has-hole? (program e)))))
 
+(defun %verify-with-examples (info program-record)
+  "Checks if a program satisfies all examples in INFO"
+  (every #'(lambda (ex)
+             (semgus:with-example (input output descriptor ex)
+               (smt:state=
+                (ast:execute-program tdp:*semantics*
+                                     descriptor
+                                     (program program-record)
+                                     input)
+                output)))
+         (semgus:examples (specification info))))
+
+(defun %verify-with-relational (program-record)
+  "Verifies a program against a relational specification"
+  (eql :valid
+       (semgus:verify-program
+        (make-instance 'com.kjcjohnson.synthkit.semgus.verifiers::concretizing-verifier)
+        tdp:*semgus-problem*
+        (program program-record))))
+
+(defun %do-verify (info program-record)
+  "Verifies a program record"
+  (if (typep (specification info) 'spec:relational-specification)
+      (%verify-with-relational program-record)
+      (%verify-with-examples info program-record)))
+
 (defmethod tdp:synthesize* ((obj (eql 'top-down-initialize))
                             nt
                             (info initial-information))
@@ -63,15 +89,7 @@
                                 :size size)
                  size
                  pq)
-                (when (every #'(lambda (ex)
-                                 (semgus:with-example (input output descriptor ex)
-                                   (smt:state=
-                                    (ast:execute-program tdp:*semantics*
-                                                         descriptor
-                                                         (program pr)
-                                                         input) 
-                                    output)))
-                             (semgus:examples (specification info)))
+                (when (semgus:check-program tdp:*semgus-problem* (program pr))
                   (format t "FOUND: [~a] ~a~%" size (program pr))
                   (return-from tdp:synthesize*
                     (leaf-program-node:new (program pr)))))))))))
@@ -96,7 +114,7 @@
                                                        :non-terminal nt))
                                     (g:occurrences prod)))))
 ;;;
-;;; Inferring. 
+;;; Inferring.
 ;;;
 (defmethod tdp:infer ((prod g:production)
                       child-index
@@ -109,7 +127,7 @@
                                                   (current-node outer-spec)))
       outer-spec))
                                         ; We do this to make dispatch work
-                     
+
 
 
 (defmethod tdp:combine ((nt g:non-terminal)
@@ -130,7 +148,7 @@
   (if (zerop (g:arity prod))
       (make-instance 'ast:program-node :production prod)
       (break)))
-      
+
 
 #|
 ;;; Default LTR is good enough for this.
@@ -153,7 +171,7 @@
 
 (defmethod is-search-done ((nt g:non-terminal)
                            (strat nt-hole-fill-search-strategy)
-                           
+
 |#
 
 (defclass top-down-traverse-search-strategy () ())

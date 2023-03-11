@@ -12,6 +12,8 @@
                     (#:smt #:com.kjcjohnson.synthkit.smt)
                     (#:semgus #:com.kjcjohnson.synthkit.semgus)
                     (#:enum #:com.kjcjohnson.tdp.enumerative)
+                    (#:chc #:com.kjcjohnson.synthkit.semgus.chc)
+                    (#:spec #:com.kjcjohnson.synthkit.specification)
                     (#:kl #:com.kjcjohnson.kale)
                     (#:kl/oo #:com.kjcjohnson.kale.oo)
                     (#:kl/c #:com.kjcjohnson.kale.collections))

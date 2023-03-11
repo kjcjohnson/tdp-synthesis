@@ -8,6 +8,7 @@
                     (#:vsa #:com.kjcjohnson.synthkit.vsa)
                     (#:smt #:com.kjcjohnson.synthkit.smt)
                     (#:semgus #:com.kjcjohnson.synthkit.semgus)
+                    (#:spec #:com.kjcjohnson.synthkit.specification)
                     (#:kl #:com.kjcjohnson.kale)
                     (#:kl/oo #:com.kjcjohnson.kale.oo))
   (:export #:synthesize
