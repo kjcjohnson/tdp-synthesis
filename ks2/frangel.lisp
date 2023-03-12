@@ -8,12 +8,20 @@
 ;;;
 (register-solver :frangel)
 
+(defun frangel-spec-transformer (spec context)
+  "Converts a specification into a form useful for FrAngel"
+  (declare (ignore context))
+  (if (spec:is-pbe? spec)
+      (make-instance 'spec:intersection-specification  ; We want a single top-level
+                     :components (spec:examples spec)) ; intersection with examples
+      (spec:convert-to-cegis spec)))
+
 (define-solver-metadata :frangel
   :name "Fragment Search"
   :symbol "fragment-search"
   :description "Generates programs randomly, using fragments of partial programs"
   :action "Fragment Search"
-  :spec-transformer #'%io-and-cegis-spec-transformer
+  :spec-transformer #'frangel-spec-transformer
   :options (list))
 
 (defmethod solve-problem ((solver (eql :frangel)) semgus-problem &key)
