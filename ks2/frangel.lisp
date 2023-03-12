@@ -10,11 +10,14 @@
 
 (defun frangel-spec-transformer (spec context)
   "Converts a specification into a form useful for FrAngel"
-  (declare (ignore context))
-  (if (spec:is-pbe? spec)
-      (make-instance 'spec:intersection-specification  ; We want a single top-level
-                     :components (spec:examples spec)) ; intersection with examples
-      (spec:convert-to-cegis spec)))
+  (cond
+    ((spec:is-pbe? spec)
+     (make-instance 'spec:intersection-specification  ; We want a single top-level
+                    :components (spec:examples spec))) ; intersection with examples
+    ((%can-convert-to-cegis spec context)
+     (spec:convert-to-cegis spec))
+    (t
+     spec)))
 
 (define-solver-metadata :frangel
   :name "Fragment Search"
