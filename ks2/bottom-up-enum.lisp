@@ -24,4 +24,5 @@
 (defmethod solve-problem ((solver (eql :bottom-up-enum)) semgus-problem
                           &rest options &key max-depth prune)
   (declare (ignore max-depth prune))
-  (apply #'enum:enum-solve semgus-problem options))
+  (semgus:maybe-with-cegis (semgus-problem)
+    (apply #'enum:enum-solve semgus-problem options)))

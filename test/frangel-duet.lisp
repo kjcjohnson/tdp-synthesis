@@ -3,7 +3,6 @@
 ;;;;
 (in-package #:com.kjcjohnson.tdp.test)
 (kl/oo:import-classes-from #:duet)
-(kl/oo:import-classes-from #:vsa)
 
 (defclass frangel-duet-algorithm (duet::duet-algorithm)
   ((random-trials :initarg :random-trials :reader random-trials)
@@ -69,4 +68,4 @@
               (tdp:synthesize nt info))
             (progn
               (format *trace-output* "; Got random candidate!~%")
-              (leaf-program-node:new candidate)))))))
+              (make-instance 'vsa:leaf-program-node :program candidate)))))))

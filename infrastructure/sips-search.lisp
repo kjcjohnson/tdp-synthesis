@@ -156,5 +156,5 @@
       (push
        (combine prod (reverse (sips%program-set result)) (sips%info strategy)) 
        punion))
-    (union-program-node:new punion)))
+    (make-instance 'vsa:union-program-node :programs punion)))
 

@@ -2,7 +2,6 @@
 ;;;; Combination functions for enumeration
 ;;;;
 (in-package #:com.kjcjohnson.tdp.enumerative)
-(kl/oo:import-classes-from #:vsa)
 (kl/oo:import-classes-from #:kl/c)
 
 (defmethod tdp:combine ((nt g:non-terminal) children (info enumerator-info))
@@ -11,18 +10,18 @@
           ";BP: ~a~%"
           (reduce #'+
                   (map 'list
-                       #'(lambda (x) (program-node:program-count x))
+                       #'(lambda (x) (vsa:program-count x))
                        children)))
   (let ((ret
           (if (not (slot-value info 'prune))
-              (union-program-node:new children)
+              (make-instance 'vsa:union-program-node :programs children)
               (vsa:prune children
                          (inputs info)
                          tdp:*semantics*
                          (descriptors info)))))
     '(format *trace-output*
             ";AP: ~a~%"
-            (program-node:program-count ret))
+            (vsa:program-count ret))
     ret))
     
 
@@ -30,5 +29,8 @@
 (defmethod tdp:combine ((prod g:production) children (info enumerator-info))
   "Combines productions for enumeration"
   (if (zerop (g:arity prod))
-      (leaf-program-node:new (make-instance 'ast:program-node :production prod))
-      (cross-program-node:new prod children)))
+      (make-instance 'vsa:leaf-program-node
+                     :program (make-instance 'ast:program-node :production prod))
+      (make-instance 'vsa:cross-program-node
+                     :production prod
+                     :sets children)))

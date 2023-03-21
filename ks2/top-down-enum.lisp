@@ -14,4 +14,5 @@
   :options (list))
 
 (defmethod solve-problem ((solver (eql :top-down-enum)) semgus-problem &key)
-  (tde:top-down-enum-solve semgus-problem))
+  (semgus:maybe-with-cegis (semgus-problem)
+    (tde:top-down-enum-solve semgus-problem)))

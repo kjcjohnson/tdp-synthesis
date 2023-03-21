@@ -3,7 +3,6 @@
 ;;;;
 (in-package #:com.kjcjohnson.tdp.test)
 (kl/oo:import-classes-from #:duet)
-(kl/oo:import-classes-from #:vsa)
 
 (defclass random-duet-algorithm (duet::duet-algorithm)
   ((enum-switch :initform nil)))
@@ -50,7 +49,7 @@
             (setf (slot-value tdp:*algorithm* 'enum-switch) nil))))
     (kl:foreach (program in enumerated-programs)
       (when (> (random 100) *random-duet-randomness*)
-        (push (leaf-program-node:new program) kept-programs)))
+        (push (make-instance 'vsa:leaf-program-node :program program) kept-programs)))
     (format *trace-output*
             "; Kept ~a enumerated programs~%"
             (length kept-programs))
@@ -61,16 +60,19 @@
               (loop for i from 0 to (* 10 (+ (floor (/ max-depth 4)) 1))
                     when (< (random 100) *random-duet-randomness*)
                       collect
-                      (leaf-program-node:new
-                       (frangel::generate-random-tree tdp:*grammar*
-                                                      nil
-                                                      nt
-                                                      max-depth)))))
+                      (make-instance 'vsa:leaf-program-node
+                                     :program
+                                     (frangel::generate-random-tree tdp:*grammar*
+                                                                    nil
+                                                                    nt
+                                                                    max-depth)))))
 
         (vsa:prune
-         (union-program-node:new
-          (list (union-program-node:new kept-programs)
-                (union-program-node:new rand-programs)))
+         (make-instance
+          'vsa:union-program-node
+          :programs (list
+                     (make-instance 'vsa:union-program-node :programs kept-programs)
+                     (make-instance 'vsa:union-program-node :programs rand-programs)))
          (enum::inputs info)
          tdp:*semantics*
          (enum::descriptors info))))))

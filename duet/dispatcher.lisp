@@ -145,9 +145,10 @@
 (defmethod tdp:synthesize* ((obj (eql 'split-disjunctive))
                             nt-or-prod
                             (info disjunctive-duet-information))
-  (union-program-node:new
-   (map 'list #'(lambda (i) (tdp:synthesize nt-or-prod i))
-        (disjunctive-duet-information:sub-specifications info))))
+  (make-instance 'vsa:union-program-node
+                 :programs
+                 (map 'list #'(lambda (i) (tdp:synthesize nt-or-prod i))
+                      (disjunctive-duet-information:sub-specifications info))))
 
 (defmethod tdp:synthesize* ((obj (eql 'check-refinement))
                             nt-or-prod

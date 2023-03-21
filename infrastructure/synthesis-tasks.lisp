@@ -2,7 +2,6 @@
 ;;;; Synthesis tasks - the basic infrastructure for TDP synthesis
 ;;;;
 (in-package #:com.kjcjohnson.tdp)
-(kl/oo:import-classes-from #:com.kjcjohnson.synthkit.vsa)
 
 ;;;
 ;;; The specialized synthesis task.

@@ -2,11 +2,11 @@
 ;;;; Synthesis task for filtering enumerated programs
 ;;;;
 (in-package #:com.kjcjohnson.tdp.enumerative)
-(kl/oo:import-classes-from #:vsa)
 
 (defun $debug-break (program)
+  '(format t "~a~%" program)
   (when
-      (string= "#<PROGRAM-NODE $eval($concat($char_1,$or($char_1,$char_2)))>"
+      (string= "#<PROGRAM-NODE $ite($<($x,$y),$y,$x)>"
                (format nil "~a" program))
     (break)))
 
@@ -25,9 +25,12 @@
           (next-checkpoint (+ 10 (get-universal-time)))
           (p-count 0)
           (a-count 0)
-          (t-count (program-node:program-count programs)))
+          (t-count (vsa:program-count programs)))
       (format t "~&Number of programs: ~a~%" t-count)
-      (kl:foreach (candidate in programs)
+      '(break)
+      (vsa:do-programs (candidate programs)
+        '(format t "~&PROG: ~a~%" candidate)
+        ;;($debug-break candidate)
         (when (and
                (or (null min-prog)
                    (< (ast:program-size candidate)
@@ -45,6 +48,7 @@
                               (descriptors info))))
           (setf min-prog candidate)
           (format t "~&Good [~s]: ~a~%" (ast:program-size candidate) candidate))
+        ;;($debug-break candidate)
         (incf p-count)
         (incf a-count)
         (when (< next-checkpoint (get-universal-time))
@@ -55,5 +59,5 @@
                 p-count 0)))
       
       (if (null min-prog)
-          (empty-program-node:new)
-          (leaf-program-node:new min-prog)))))
+          (make-instance 'vsa:empty-program-node)
+          (make-instance 'vsa:leaf-program-node :program min-prog)))))

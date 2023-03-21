@@ -1,5 +1,4 @@
 (in-package #:com.kjcjohnson.tdp.duet)
-(kl/oo:import-classes-from #:vsa)
 
 (defmethod tdp:combine ((prod g:production) children (info duet-information))
   "Default combination function."
@@ -14,12 +13,12 @@
                    (duet-information:inputs info)
                    (duet-information:outputs info)
                    (duet-information:descriptors info))
-            (leaf-program-node:new leaf)
-            (empty-program-node:new)))
+            (make-instance 'vsa:leaf-program-node :program leaf)
+            (make-instance 'vsa:empty-program-node)))
       (let ((descriptors (duet-information:descriptors info)))
         (vsa:prune
          (vsa:filter
-          (cross-program-node:new prod children)
+          (make-instance 'vsa:cross-program-node :production prod :sets children)
           (duet-information:inputs info)
           (duet-information:outputs info)
           tdp:*semantics*
@@ -35,4 +34,4 @@
              (duet-information:inputs info)
              tdp:*semantics*
              (duet-information:descriptors info)
-             :test #'kl:equals))
+             :test #'equal))

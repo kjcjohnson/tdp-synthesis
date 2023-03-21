@@ -2,20 +2,19 @@
 ;;;; Default synthesis tasks for common situations
 ;;;;
 (in-package #:com.kjcjohnson.tdp)
-(kl/oo:import-classes-from #:com.kjcjohnson.synthkit.vsa)
 
 ;;;
 ;;; Specialized task for returning an empty program node
 ;;;
 (defmethod synthesize* ((obj (eql nil)) nt-or-prod info)
-  (empty-program-node:new))
+  (make-instance 'vsa:empty-program-node))
 
 ;;;
 ;;; Basic union combination
 ;;;
 (defmethod combine ((nt g:non-terminal) children context-info)
   "Default non-terminal search combination."
-  (union-program-node:new children))
+  (make-instance 'vsa:union-program-node :programs children))
 
 ;;;
 ;;; Default non-terminal synthesis task

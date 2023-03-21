@@ -14,7 +14,7 @@
     ((spec:is-pbe? spec)
      (make-instance 'spec:intersection-specification  ; We want a single top-level
                     :components (spec:examples spec))) ; intersection with examples
-    ((%can-convert-to-cegis spec context)
+    ((spec:cegis-supported-for-specification? spec context)
      (spec:convert-to-cegis spec))
     (t
      spec)))
@@ -28,7 +28,8 @@
   :options (list))
 
 (defmethod solve-problem ((solver (eql :frangel)) semgus-problem &key)
-  (frangel:fragment-search semgus-problem))
+  (semgus:maybe-with-cegis (semgus-problem)
+    (frangel:fragment-search semgus-problem)))
 
 ;;;
 ;;; Random Search
@@ -40,7 +41,9 @@
   :symbol "random"
   :description "Randomly generates and checks programs"
   :action "Random Search"
+  :spec-transformer #'frangel-spec-transformer
   :options (list))
 
 (defmethod solve-problem ((solver (eql :random)) semgus-problem &key)
-  (frangel:random-search semgus-problem))
+  (semgus:maybe-with-cegis (semgus-problem)
+    (frangel:random-search semgus-problem)))

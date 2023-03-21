@@ -112,7 +112,7 @@ run will continue. Otherwise, an error condition is signalled.")
     (let ((result (synthesize (g:initial-non-terminal *grammar*) info))
           (result-list nil))
       
-      (kl:foreach (p in result)
+      (vsa:do-programs (p result)
         (push p result-list)
         (when print
           (format t "~a~%" p)))

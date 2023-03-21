@@ -1,6 +1,4 @@
 (in-package #:com.kjcjohnson.tdp.duet)
-(kl/oo:import-classes-from #:vsa)
-
 
 (defun universal-witness (prod child-ix ctx)
   (declare (ignore prod child-ix ctx))
@@ -106,7 +104,7 @@
                        (outer-spec duet-information)
                        context)
   (let (up)
-    (kl:foreach (program in program-set)
+    (vsa:do-programs (program program-set)
       (let ((descriptors (ast:semantics-descriptors-for-non-terminal
                           tdp:*semantics*
                           (g:instance (ast:production program)))))
@@ -120,7 +118,7 @@
                                               program
                                               input))
                (duet-information:inputs outer-spec))
-          (leaf-program-node:new program))
+          (make-instance 'vsa:leaf-program-node :program program))
        up)))
     up))
 

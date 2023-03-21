@@ -1,5 +1,4 @@
 (in-package #:com.kjcjohnson.tdp)
-(kl/oo:import-classes-from #:vsa)
 
 (defclass enumerator-algorithm () ())
 
@@ -34,7 +33,7 @@
           (next-checkpoint (+ 10 (get-universal-time)))
           (p-count 0)
           (a-count 0)
-          (t-count (program-node:program-count programs)))
+          (t-count (vsa:program-count programs)))
       (format t "~&Number of programs: ~a~%" t-count)
       (kl:foreach (candidate in programs)
         (when (and
@@ -61,5 +60,7 @@
 
 (defmethod combine ((prod g:production) children ci)
   (if (zerop (g:arity prod))
-      (leaf-program-node:new (make-instance 'ast:program-node :production prod))
-      (cross-program-node:new prod children)))
+      (make-instance 'vsa:leaf-program-node
+                     :program (make-instance 'ast:program-node :production prod))
+      (make-instance 'vsa:cross-program-node
+                     :production prod :sets children)))

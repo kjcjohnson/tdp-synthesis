@@ -3,7 +3,6 @@
 ;;;;
 (in-package #:com.kjcjohnson.tdp.duet)
 (kl/oo:import-classes-from #:kl/c)
-(kl/oo:import-classes-from #:vsa)
 
 ;;;
 ;;; The component library
@@ -24,7 +23,7 @@
             (kl:foreach (nt in (g:non-terminals tdp:*grammar*))
               (let ((comps (tdp:synthesize nt info)))
                 (format *trace-output* "~&;;   Got ~a components for ~a~%"
-                        (program-node:program-count comps) nt)
+                        (vsa:program-count comps) nt)
                 (&dictionary:add _components
                                  nt
                                  comps)))))
@@ -51,7 +50,7 @@
                             (slot-value info 'descriptors))
                            (run-reset-hooks tdp:*algorithm*)
                            (tdp:synthesize nt-or-prod info))
-          while (zerop (program-node:program-count programs))
+          while (zerop (vsa:program-count programs))
           finally (return programs))))
 
 
@@ -65,7 +64,7 @@
                             (nt g:non-terminal)
                             info)
   "Handles checking the library for our components."
-  (kl:foreach (candidate in (component-library:get-components
+  (vsa:do-programs (candidate (component-library:get-components
                              *component-library*
                              nt))
     (when (every #'(lambda (input output descriptor)
@@ -77,12 +76,13 @@
                  (slot-value info 'inputs)
                  (slot-value info 'outputs)
                  (slot-value info 'descriptors))
-      (return-from tdp:synthesize* (leaf-program-node:new candidate))))
+      (return-from tdp:synthesize* (make-instance 'vsa:leaf-program-node
+                                                  :program candidate))))
   
   (let ((new-info (duet-information:copy info)))
     (setf (duet-information:check-library? new-info) nil)
     (let* ((res (tdp:synthesize nt new-info))
-           (cnt (program-node:program-count res)))
+           (cnt (vsa:program-count res)))
       
       (values res cnt))))
                           
