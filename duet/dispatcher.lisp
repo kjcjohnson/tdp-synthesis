@@ -18,7 +18,7 @@
                       'clear-task-cache
                       (lambda ()
                         (setf task-cache (dictionary:new))))))
-  
+
   (defun %cache-for-g-elt (nt-or-prod)
     "Gets the cache for the particular grammar element"
     (multiple-value-bind (cache present?) (&dictionary:get task-cache nt-or-prod)
@@ -26,7 +26,7 @@
         (setf cache (dictionary:new :test #'kl:equals))
         (&dictionary:add task-cache nt-or-prod cache))
       cache))
-  
+
   (defun is-task-cached? (nt-or-prod info)
     "Checks if the current requested task is already in-progress or cached"
     (multiple-value-bind (val present)
@@ -38,7 +38,7 @@
     (multiple-value-bind (val present)
         (&dictionary:get (%cache-for-g-elt nt-or-prod) info)
       (and present (null val))))
-  
+
   (defun add-in-progress-task (nt-or-prod info)
     "Marks a task as being in-progress"
     (&dictionary:add (%cache-for-g-elt nt-or-prod) info nil))
@@ -94,24 +94,24 @@
     ((> tdp:*depth* 30)
      nil)
 
+    ((or (not (boundp '*component-library*))
+         (null *component-library*))
+     'component-library-generate)
+
     ((not (null (duet-information:refinement info)))
      'check-refinement)
 
     ((null (duet-information:outputs info))
      'component-library-task)
-    
+
     ((is-task-in-progress? nt-or-prod info)
      '(format *trace-output* "~&;; Loop: ~s [~s]~%" (duet-information:outputs info) nt-or-prod)
      nil) ;; Looping
-    
-    ((or (not (boundp '*component-library*))
-         (null *component-library*))
-     'component-library-generate)
 
     ((and (typep nt-or-prod 'g:non-terminal)
           (slot-value info 'check-library?))
      'check-component-library)
-    
+
     (t
      :tdp)))
 
@@ -130,7 +130,7 @@
      (error "Unknown info: ~a" info))))
 
 (defmethod tdp:synthesize-dispatch ((algorithm duet-algorithm) nt-or-prod (info enum::enumerator-info))
-  
+
   (cond ((null info)
          nil)
         ((string= (g:name nt-or-prod) "Constant")
