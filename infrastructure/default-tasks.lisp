@@ -7,7 +7,7 @@
 ;;; Specialized task for returning an empty program node
 ;;;
 (defmethod synthesize* ((obj (eql nil)) nt-or-prod info)
-  (make-instance 'vsa:empty-program-node))
+  (vsa:make-empty-program-node))
 
 ;;;
 ;;; Basic union combination

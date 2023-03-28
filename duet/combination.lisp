@@ -13,8 +13,8 @@
                    (duet-information:inputs info)
                    (duet-information:outputs info)
                    (duet-information:descriptors info))
-            (make-instance 'vsa:leaf-program-node :program leaf)
-            (make-instance 'vsa:empty-program-node)))
+            (vsa:make-leaf-program-node leaf)
+            (vsa:make-empty-program-node)))
       (let ((descriptors (duet-information:descriptors info)))
         (vsa:prune
          (vsa:filter

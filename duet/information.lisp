@@ -35,34 +35,54 @@
                         :initarg :refinement-function
                         :initform (error "Refinement function is required."))))
 
-(defmethod kl:equals ((a duet-refinement) (b duet-refinement))
+(defun refinement= (a b)
   "Checks if A and B are equal. Only the name is checked."
-  (and (eql (name a) (name b))))
+  (declare (type (or duet-refinement null) a b))
+  (cond
+    ((and (null a) (null b))
+     t)
+    ((or (null a) (null b))
+     nil)
+    (t
+     (and (eql (name a) (name b))))))
 
-(defmethod kl:get-hash-code ((obj duet-refinement))
+(defun refinement-hash-code (obj)
   "Gets a hash code for the refinement."
-  (sxhash (name obj)))
+  (declare (type (or duet-refinement null) obj))
+  (if (null obj)
+      (sxhash nil)
+      (sxhash (name obj))))
 
-(defmethod kl:equals ((a duet-information) (b duet-information))
+(defun information= (a b)
   "Checks if A and B are equal"
-  (and (kl:equals (duet-information:inputs a)
-                  (duet-information:inputs b))
-       (kl:equals (duet-information:outputs a)
-                  (duet-information:outputs b))
-       (kl:equals (duet-information:descriptors a)
-                  (duet-information:descriptors b))
-       (kl:equals (duet-information:refinement a)
-                  (duet-information:refinement b))
-       (kl:equals (duet-information:check-library? a)
-                  (duet-information:check-library? b))))
+  (declare (type duet-information a b))
+  (and
+   ;; List of SMT states
+   (every #'smt:state=
+          (duet-information:inputs a)
+          (duet-information:inputs b))
+   ;; List of SMT states
+   (every #'smt:state=
+          (duet-information:outputs a)
+          (duet-information:outputs b))
+   ;; List of symbols
+   (equal (duet-information:descriptors a)
+          (duet-information:descriptors b))
+   ;; Refinement object
+   (refinement= (duet-information:refinement a)
+                (duet-information:refinement b))
+   ;; Boolean flag
+   (equal (duet-information:check-library? a)
+          (duet-information:check-library? b))))
 
-(defmethod kl:get-hash-code ((obj duet-information))
+(defun information-hash-code (obj)
   "Gets a hash code for the given information."
+  (declare (type duet-information obj))
   (logxor
-   (sxhash (duet-information:inputs obj))
-   (sxhash (duet-information:outputs obj))
+   (reduce #'logxor (duet-information:inputs obj) :key #'smt:state-hash-code)
+   (reduce #'logxor (duet-information:outputs obj) :key #'smt:state-hash-code)
    (sxhash (duet-information:descriptors obj))
-   (kl:get-hash-code (duet-information:refinement obj))
+   (refinement-hash-code (duet-information:refinement obj))
    (sxhash (duet-information:check-library? obj))))
 
 (defmethod print-object ((info duet-information) stream)

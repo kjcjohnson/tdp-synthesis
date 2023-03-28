@@ -15,24 +15,29 @@
                                           (smt:get-first-value val))))
                           ctx-list))))
 
-(defun set-new-info (info output-spec)
+(defun set-new-info (info output-spec head)
   "Sets information on a duet information object"
-  (if (find t output-spec :key #'(lambda (os) (typep os 'duet-refinement)))
-      (setf (duet-information:refinement info)
-            (map 'list
-                 #'(lambda (r)
-                     (if (typep r 'duet-refinement)
-                         r
-                         (make-instance 'duet-refinement
-                                        :name 'true
-                                        :refinement-function (constantly t))))
-                 output-spec)
-            (duet-information:outputs info)
-            nil)
-      (setf (duet-information:outputs info)
-            (map 'list
-                 #'(lambda (s) (smt:make-state (list :output s)))
-                 output-spec))))
+  ;; Critical assumption (for now): there is only one output variable
+  ;; Yikes. None of our witnesses will work with more.
+  (let ((outputs (chc:output-formals head)))
+    (assert (= 1 (length outputs)))
+
+    (if (find t output-spec :key #'(lambda (os) (typep os 'duet-refinement)))
+        (setf (duet-information:refinement info)
+              (map 'list
+                   #'(lambda (r)
+                       (if (typep r 'duet-refinement)
+                           r
+                           (make-instance 'duet-refinement
+                                          :name 'true
+                                          :refinement-function (constantly t))))
+                   output-spec)
+              (duet-information:outputs info)
+              nil)
+        (setf (duet-information:outputs info)
+              (map 'list
+                   #'(lambda (s) (smt:make-state (list (first outputs) s)))
+                   output-spec)))))
 
 (defun zip-removing-null (lists)
   (remove-if #'(lambda (x) (some #'null x))
@@ -42,10 +47,11 @@
                       child-ix
                       (outer-spec duet-information)
                       context)
-  (let* ((pn (map-production-to-witness-name prod))
+  (let* ((head (map-production-to-head prod)) ;; TODO: we need the descriptor, not prod
+         (pn (map-production-to-witness-name prod))
          (info (duet-information:copy outer-spec))
          (inv (get-inverse-semantics pn child-ix)))
-    
+
     (setf (duet-information:check-library? info) t)
     (cond
       ((not (null inv))
@@ -62,7 +68,8 @@
                               (funcall inv
                                        in
                                        (smt:get-first-value out)
-                                       ctx :production prod))
+                                       ctx
+                                       :production prod))
                           (duet-information:inputs info)
                           (duet-information:outputs info)
                           trans-ctx)))
@@ -77,9 +84,9 @@
                                       (find :top x))
                             combos))
             (setf info (universal-witness prod child-ix outer-spec)))
-           
+
            ((= 1 (length combos))
-            (set-new-info info (first combos)))
+            (set-new-info info (first combos) head))
 
            (t
             (warn "---Disjunctive Spec---:~a (~a combinations)~%"
@@ -88,11 +95,11 @@
                   for combo in combos
                   for sub-info = (duet-information:copy info)
                   doing
-                     (set-new-info sub-info combo)
+                     (set-new-info sub-info combo head)
                      (push sub-info sub-specs)
                   finally
                      (setf info (disjunctive-duet-information:new sub-specs))))))
-       
+
        info)
 
       (t
@@ -118,7 +125,7 @@
                                               program
                                               input))
                (duet-information:inputs outer-spec))
-          (make-instance 'vsa:leaf-program-node :program program))
+          (vsa:make-leaf-program-node program))
        up)))
     up))
 

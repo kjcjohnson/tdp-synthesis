@@ -9,51 +9,61 @@
    (qualifier :initarg :qualifier :reader cache-entry%qualifier))
   (:documentation "Entry in program cache with qualifier"))
 
-(let ((task-cache (dictionary:new)))
 
-  (tdp:define-init-hook add-clear-task-cache
-    "Adds hook to clear the task cache after each enumeration"
-    (when (typep tdp:*algorithm* 'duet-algorithm)
-      (add-reset-hook tdp:*algorithm*
-                      'clear-task-cache
-                      (lambda ()
-                        (setf task-cache (dictionary:new))))))
+(defvar *duet-task-cache* nil "A cache for in-progress Duet tasks")
+(defconstant +duet-initial-task-cache-size+ 200 "Initial size of the Duet task cache")
 
-  (defun %cache-for-g-elt (nt-or-prod)
-    "Gets the cache for the particular grammar element"
-    (multiple-value-bind (cache present?) (&dictionary:get task-cache nt-or-prod)
-      (unless present?
-        (setf cache (dictionary:new :test #'kl:equals))
-        (&dictionary:add task-cache nt-or-prod cache))
-      cache))
+(defun %make-duet-task-cache ()
+  "Creates a fresh Duet task cache, mapping grammar elements to a task subcache"
+  (make-hash-table :size +duet-initial-task-cache-size+))
 
-  (defun is-task-cached? (nt-or-prod info)
-    "Checks if the current requested task is already in-progress or cached"
-    (multiple-value-bind (val present)
-        (&dictionary:get (%cache-for-g-elt nt-or-prod) info)
-      (and present (<= (cache-entry%qualifier val) tdp:*depth*))))
+(defun %make-duet-task-subcache ()
+  "Creates fresh Duet task subcache, mapping Duet info to an output state"
+  (make-hash-table :test #'information= :hash-function #'information-hash-code))
 
-  (defun is-task-in-progress? (nt-or-prod info)
-    "Checks if the current requested task is in-progress"
-    (multiple-value-bind (val present)
-        (&dictionary:get (%cache-for-g-elt nt-or-prod) info)
-      (and present (null val))))
+(tdp:define-init-hook add-clear-task-cache
+  "Adds hook to clear the task cache after each enumeration"
+  (when (typep tdp:*algorithm* 'duet-algorithm)
+    (add-reset-hook tdp:*algorithm*
+                    'clear-task-cache
+                    #'(lambda ()
+                        (setf *duet-task-cache* (%make-duet-task-cache))))))
 
-  (defun add-in-progress-task (nt-or-prod info)
-    "Marks a task as being in-progress"
-    (&dictionary:add (%cache-for-g-elt nt-or-prod) info nil))
+(defun %cache-for-g-elt (nt-or-prod)
+  "Gets the cache for the particular grammar element"
+  (multiple-value-bind (subcache present?)
+      (gethash nt-or-prod *duet-task-cache*)
+    (unless present?
+      (setf subcache (%make-duet-task-subcache))
+      (setf (gethash nt-or-prod *duet-task-cache*) subcache))
+    subcache))
 
-  (defun set-task-completed (nt-or-prod info result)
-    "Updates a task as being complete"
-    (&dictionary:add (%cache-for-g-elt nt-or-prod)
-                     info
-                     (make-instance 'cache-entry
-                                    :programs result
-                                    :qualifier tdp:*depth*)))
+(defun is-task-cached? (nt-or-prod info)
+  "Checks if the current requested task is already in-progress or cached"
+  (multiple-value-bind (val present)
+      (gethash info (%cache-for-g-elt nt-or-prod))
+    (and present (<= (cache-entry%qualifier val) tdp:*depth*))))
 
-  (defun get-task-result (nt-or-prod info)
-    "Gets information from a completed task"
-    (cache-entry%programs (&dictionary:get (%cache-for-g-elt nt-or-prod) info))))
+(defun is-task-in-progress? (nt-or-prod info)
+  "Checks if the current requested task is in-progress"
+  (multiple-value-bind (val present)
+      (gethash info (%cache-for-g-elt nt-or-prod))
+    (and present (null val))))
+
+(defun add-in-progress-task (nt-or-prod info)
+  "Marks a task as being in-progress"
+  (setf (gethash info (%cache-for-g-elt nt-or-prod)) nil))
+
+(defun set-task-completed (nt-or-prod info result)
+  "Updates a task as being complete"
+  (setf (gethash info (%cache-for-g-elt nt-or-prod))
+        (make-instance 'cache-entry
+                       :programs result
+                       :qualifier tdp:*depth*)))
+
+(defun get-task-result (nt-or-prod info)
+  "Gets information from a completed task"
+  (cache-entry%programs (gethash info (%cache-for-g-elt nt-or-prod))))
 
 (defmethod tdp:synthesize* :around ((specializer (eql :tdp))
                                     nt-or-prod

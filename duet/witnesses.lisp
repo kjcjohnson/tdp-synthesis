@@ -4,10 +4,21 @@
 (in-package :com.kjcjohnson.tdp.duet)
 (kl/oo:import-classes-from #:kl/c)
 
+(defun map-production-to-head
+    (production &optional (semgus-problem tdp:*semgus-problem*))
+  "Maps a production to the associated CHC head. WRONG! Needs a descriptor instead."
+  (let ((context (semgus:context semgus-problem)))
+    (loop for chc in (semgus:chcs context)
+          when (eql (g:name (g:operator production))
+                    (chc:name (chc:constructor chc)))
+            do (return-from map-production-to-head (chc:head chc))))
+  (error "Cannot find CHC head for production: ~a" production))
+
+
 (let (witness-name-cache)
   (tdp:define-init-hook clear-witness-cache
     (setf witness-name-cache (dictionary:new)))
-  
+
   (defun map-production-to-witness-name (production
                                          &optional (semgus-problem
                                                     tdp:*semgus-problem*))
@@ -19,7 +30,7 @@
                          production
                          name))
       name)))
-  
+
 
 (defun map-production-to-witness-name* (production semgus-problem)
   "Maps a production to a canonical name for witnessing."
@@ -40,18 +51,20 @@
                       #'(lambda (chc)
                           (let ((constraint (chc:constraint chc))
                                 (name nil))
-                            (cond
+                            (?:match constraint
                               ;;
                               ;; Standard. Just equals a function call
                               ;;
-                              ((smt:is-application? constraint "=")
-                               (kl:foreach (child in (smt:children constraint))
-                                 (when (smt:is-application? child)
-                                   (setf name (smt:name child)))))
+                              ((?:guard
+                                (or (smt:fn "=" ((smt:fn fn-name _) (smt:var var)))
+                                    (smt:fn "=" ((smt:var var) (smt:fn fn-name _))))
+                                (some (a:curry #'eql var)
+                                      (chc:output-formals (chc:head chc))))
+                               (setf name fn-name))
                               ;;
                               ;; Just true. Just identity?
                               ;;
-                              ((smt:is-application? constraint "true")
+                              ((smt:fn "true" ())
                                (setf name (smt:ensure-identifier "identity"))))
                             name))
                       chcs)))
@@ -61,4 +74,4 @@
       (when (every #'null names)
         (warn "No witness inferred for production: ~a" production))
       (first names))))
-        
+

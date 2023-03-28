@@ -14,6 +14,8 @@
                     (#:enum #:com.kjcjohnson.tdp.enumerative)
                     (#:chc #:com.kjcjohnson.synthkit.semgus.chc)
                     (#:spec #:com.kjcjohnson.synthkit.specification)
+                    (#:? #:trivia)
+                    (#:a #:alexandria)
                     (#:kl #:com.kjcjohnson.kale)
                     (#:kl/oo #:com.kjcjohnson.kale.oo)
                     (#:kl/c #:com.kjcjohnson.kale.collections))
