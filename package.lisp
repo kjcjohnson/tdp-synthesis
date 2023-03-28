@@ -9,6 +9,7 @@
                     (#:smt #:com.kjcjohnson.synthkit.smt)
                     (#:semgus #:com.kjcjohnson.synthkit.semgus)
                     (#:spec #:com.kjcjohnson.synthkit.specification)
+                    (#:a #:alexandria)
                     (#:kl #:com.kjcjohnson.kale)
                     (#:kl/oo #:com.kjcjohnson.kale.oo))
   (:export #:synthesize
@@ -26,6 +27,14 @@
            #:get-next-search-query
            #:search-transition
            #:get-search-result
+
+           ;; SIPS
+           #:sideways-information-passing-strategy
+           #:sips.ltr
+           #:sips.final
+           #:sips.nth-child
+           #:sips.nth-dependencies
+           #:get-sips
 
            ;; Contexts
            #:context

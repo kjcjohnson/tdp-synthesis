@@ -51,21 +51,23 @@
                       #'(lambda (chc)
                           (let ((constraint (chc:constraint chc))
                                 (name nil))
-                            (?:match constraint
-                              ;;
-                              ;; Standard. Just equals a function call
-                              ;;
-                              ((?:guard
-                                (or (smt:fn "=" ((smt:fn fn-name _) (smt:var var)))
-                                    (smt:fn "=" ((smt:var var) (smt:fn fn-name _))))
-                                (some (a:curry #'eql var)
-                                      (chc:output-formals (chc:head chc))))
-                               (setf name fn-name))
-                              ;;
-                              ;; Just true. Just identity?
-                              ;;
-                              ((smt:fn "true" ())
-                               (setf name (smt:ensure-identifier "identity"))))
+                            (unless (< 1 (length (chc:output-formals (chc:head chc))))
+
+                              (?:match constraint
+                                ;;
+                                ;; Standard. Just equals a function call
+                                ;;
+                                ((?:guard
+                                  (or (smt:fn "=" ((smt:fn fn-name _) (smt:var var)))
+                                      (smt:fn "=" ((smt:var var) (smt:fn fn-name _))))
+                                  (some (a:curry #'eql var)
+                                        (chc:output-formals (chc:head chc))))
+                                 (setf name fn-name))
+                                ;;
+                                ;; Just true. Just identity?
+                                ;;
+                                ((smt:fn "true" ())
+                                 (setf name (smt:ensure-identifier "identity")))))
                             name))
                       chcs)))
       (when (not (every #'eql names (rest names)))

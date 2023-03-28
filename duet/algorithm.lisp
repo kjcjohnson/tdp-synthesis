@@ -23,6 +23,11 @@
   (loop for (name . hook) in (reset-hooks algo)
         doing (funcall hook)))
 
+(defun any-inverse-semantics? (name)
+  "Checks if an operator NAME has any associated inverse semantics"
+  (nth-value 1 (&dictionary:get (duet%inverse-semantics tdp:*algorithm*)
+                                (smt:ensure-identifier name))))
+
 (defun get-inverse-semantics (name child-ix)
   "Gets the inverse semantic function for an operator, or null if not defined."
   (let* ((semlist (&dictionary:get (duet%inverse-semantics tdp:*algorithm*)

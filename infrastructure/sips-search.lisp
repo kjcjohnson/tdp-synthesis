@@ -70,7 +70,7 @@
                                 info)
   ;; Return: strategy and initial state
   (let ((search (make-instance 'sips-search
-                               :sips (sips.ltr (g:arity prod))
+                               :sips (get-sips algorithm prod info)
                                :info info))
         (state (make-instance 'sips-state :production prod)))
     (sips%populate-context-stack search state)

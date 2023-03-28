@@ -34,21 +34,25 @@
 (defgeneric context.up (n context)
   (:documentation "Gets the upward information for the nth child")
   (:method (n (context context))
+    (assert (< n 10))
     (nth n (slot-value context 'upward-info))))
 
 (defgeneric (setf context.up) (value n context)
   (:documentation "Sets the upward information for the nth child")
   (:method (value n (context context))
+    (assert (< n 10))
     (setf (nth n (slot-value context 'upward-info)) value)))
 
 (defgeneric context.down (n context)
   (:documentation "Gets the downward information for the nth child")
   (:method (n (context context))
+    (assert (< n 10))
     (nth n (slot-value context 'downward-info))))
 
 (defgeneric (setf context.down) (value n context)
   (:documentation "Sets the downward information for the nth child")
   (:method (value n (context context))
+    (assert (< n 10))
     (setf (nth n (slot-value context 'downward-info)) value)))
 
 (defgeneric context.information-equivalent? (info1 info2)

@@ -9,6 +9,7 @@
                          collecting (tdp:context.up i context))))
     (loop for i from 0 below target-length
           collecting (map 'list #'(lambda (s)
+                                    (assert (< i 10))
                                     (let ((val (nth i s)))
                                       (if (null val)
                                           val
@@ -132,3 +133,11 @@
     ;(make-instance 'duet-up-info
     ;               :programs programs
     ;               :outputs outputs)))
+
+(defmethod tdp:get-sips
+    (algorithm (prod g:production) (info duet-information))
+  "Gets a search strategy for PROD. Left-to-right if any witnesses defined, otherwise
+one that only has the final term depend on the rest."
+  (if (any-inverse-semantics? (map-production-to-witness-name prod))
+      (tdp:sips.ltr (g:arity prod))
+      (tdp:sips.final (g:arity prod))))
