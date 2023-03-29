@@ -19,10 +19,15 @@
         (vsa:prune
          (vsa:filter
           (make-instance 'vsa:cross-program-node :production prod :sets children)
-          (duet-information:inputs info)
-          (duet-information:outputs info)
-          tdp:*semantics*
-          descriptors)
+          #'(lambda (candidate)
+              (every #'(lambda (input output descriptor)
+                         (smt:state= output (ast:execute-program tdp:*semantics*
+                                                                 descriptor
+                                                                 candidate
+                                                                 input)))
+                     (duet-information:inputs info)
+                     (duet-information:outputs info)
+                     (duet-information:descriptors info))))
          (duet-information:inputs info)
          tdp:*semantics*
          descriptors

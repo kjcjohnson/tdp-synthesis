@@ -18,13 +18,18 @@
       (flet ((check-range (val)
                (if (< (abs val) cap)
                    val
+                   nil))
+             (check-value (prev next)
+               "Checks if NEXT is absolutely smaller than PREV, returning NEXT if so"
+               (if (< (abs next) (abs prev))
+                   next
                    nil)))
 
         (definv "+" 1 (in out ctx)
-          (check-range (- out (nth 0 ctx))))
+          (check-value out (- out (nth 0 ctx))))
 
         (definv "-" 1 (in out ctx)
-          (check-range (- (nth 0 ctx) out)))))))
+          (check-value out (- (nth 0 ctx) out)))))))
 
 #|
 (defun witness-lia-+-1 ()

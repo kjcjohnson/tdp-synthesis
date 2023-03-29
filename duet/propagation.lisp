@@ -117,7 +117,7 @@
                           tdp:*semantics*
                           (g:instance (ast:production program)))))
         (when (> (length descriptors) 1)
-          (error "Cannot derive when multiple matching descriptors"))
+          (error "Cannot derive when multiple matching descriptors~a" context))
         (push
          (cons
           (map 'list #'(lambda (input)

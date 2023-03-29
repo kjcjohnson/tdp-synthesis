@@ -164,13 +164,25 @@
                             nt-or-prod
                             (info duet-information))
   "Checks and filters a refinement condition."
-  (let ((new-info (duet-information:copy info)))
-    (setf (duet-information:refinement new-info) nil)
-    (let ((candidates (tdp:synthesize nt-or-prod new-info)))
-      (vsa:filter candidates
-                  (duet-information:inputs info)
-                  (duet-information:refinement info)
-                  tdp:*semantics*
-                  :test #'(lambda (actual refinement)
-                            (funcall (refinement-function refinement)
-                                     (smt:get-first-value actual)))))))
+  (labels ((refinement-test (actual refinement)
+             "Checks that a refinement matches an actual value"
+             (funcall (refinement-function refinement)
+                      (smt:get-first-value actual)))
+           (test-fn (candidate input output descriptor)
+             "Checks that CANDIDATE passes the refinement"
+             (let ((result (ast:execute-program tdp:*semantics*
+                                                descriptor
+                                                candidate
+                                                input)))
+               (refinement-test result output)))
+           (check-fn (candidate)
+             "Checks CANDIDATE"
+             (every (a:curry #'test-fn candidate)
+                    (duet-information:inputs info)
+                    (duet-information:refinement info)
+                    (duet-information:descriptors info))))
+
+    (let ((new-info (duet-information:copy info)))
+      (setf (duet-information:refinement new-info) nil)
+      (let ((candidates (tdp:synthesize nt-or-prod new-info)))
+        (vsa:filter candidates #'check-fn)))))
