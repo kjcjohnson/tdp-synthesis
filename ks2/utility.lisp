@@ -20,3 +20,25 @@ if cannot convert to either IO or CEGIS."
      (spec:convert-to-cegis spec))
     (t
      spec)))
+
+(defun setup-trace (semgus-problem suffix body-fn)
+  (let ((path (semgus:path (semgus:context semgus-problem))))
+    (with-open-file (ast:*program-trace-stream*
+                     (merge-pathnames
+                      (make-pathname
+                       :name (str:concat (pathname-name path)
+                                         "."
+                                         suffix)
+                       :type "trace")
+                      path)
+                     :direction :output
+                     :if-exists :supersede
+                     :if-does-not-exist :create)
+      (funcall body-fn))))
+
+(defmacro maybe-trace ((semgus-problem suffix trace) &body body)
+  "Maybe traces the execution"
+  `(flet ((body-fn () ,@body))
+     (if ,trace
+         (setup-trace ,semgus-problem ,suffix #'body-fn)
+         (funcall #'body-fn))))

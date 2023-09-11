@@ -25,58 +25,231 @@
   (unless (slot-boundp e 'has-hole?)
     (setf (slot-value e 'has-hole?) (ast:has-hole? (program e)))))
 
-(defun try-prune-candidate (program-record)
+(defparameter *should-prune-hook* (constantly t))
+
+(defclass abstraction-prune-strategy ()
+  ((abstract-spec :reader abstract-spec
+                  :initarg :abstract-spec
+                  :documentation "Specification containing only abstract examples")
+   (skip-prods :reader skip-prods
+               :initarg :skip-prods
+               :documentation "Productions to skip pruning"))
+  (:documentation "A strategy for abstract pruning"))
+
+(defvar *no-prune-1* nil)
+(defvar *no-prune-2* nil)
+(defvar *defer-prune* t "Whether or not to defer pruning until dequeue")
+(defvar *collect-prune-stats* t)
+(defvar *remove-pruned* t "Whether or not to remove pruned programs. For overhead.")
+
+(defun setup-prune-strategy ()
+  "Sets up data used in abstraction, if available"
+  (let ((abstraction (gethash :abstraction (semgus:metadata tdp:*semgus-problem*))))
+    (when abstraction
+      ;; Filter out only abstract examples
+      (let* ((old-spec (semgus:specification tdp:*semgus-problem*))
+             (new-spec (spec:filter-examples-by-descriptor
+                        old-spec
+                        :include abstraction))
+             (skip-prods nil))
+        (unless *no-prune-1*
+          (push (list (smt:ensure-identifier "$concat")) skip-prods)
+          (push (list (smt:ensure-identifier "$or")) skip-prods))
+        (unless *no-prune-2*
+          (push (list (smt:ensure-identifier "$phi")
+                      (smt:ensure-identifier "$star"))
+                skip-prods)
+          (push (list (smt:ensure-identifier "$eps")
+                      (smt:ensure-identifier "$star"))
+                skip-prods))
+        (make-instance 'abstraction-prune-strategy :abstract-spec new-spec
+                                                   :skip-prods skip-prods)))))
+
+(defun try-prune-candidate (program trace prune-strategy)
   "Attempts to prune the candidate program, returning a Boolean. If T, the program does
 not have any valid ways to fill its holes and can be safely pruned."
-  (declare (ignore program-record))
-  nil)
-  ;;(eql :invalid (semgus:check-program tdp:*semgus-problem*
-  ;;                                    (program program-record)
-  ;;                                    :on-unknown :valid)))
+  (flet ((maybe-do-prune ()
+           (when prune-strategy
+             (not
+              (semgus:check-program tdp:*semgus-problem*
+                                    program
+                                    :on-unknown :valid
+                                    :specification (abstract-spec prune-strategy))))))
+    ;;(format t "TRACE: ~a~%" (map 'list (*:compose #'smt:identifier-string #'g:name)
+    ;;                             trace))
+    (incf ast:*prune-candidate-counter*)
+    (when (and prune-strategy
+               (funcall *should-prune-hook* program)
+               (not (member (map 'list #'g:name trace)
+                            (skip-prods prune-strategy)
+                            :test #'(lambda (x y)
+                                      (and (>= (length x) (length y))
+                                           (every #'eql x y)))))
+               (not (eql (first trace) (second trace))))
+      (let ((pruned? (maybe-do-prune)))
+        (when *collect-prune-stats* (mark-is-pruned program trace pruned?))
+        (incf ast:*prune-attempt-counter*)
+        (when pruned? (incf ast:*prune-success-counter*)
+              #+()(format *trace-output* "++PRUNE++: ~%~a~%~%" program))
+        pruned?))))
+
+(defparameter *prune-stats-by-hole* (make-array 10 :adjustable t
+                                                   :fill-pointer 0
+                                                   :initial-element nil))
+(defparameter *prune-stats-by-size* (make-array 10 :adjustable t
+                                                   :fill-pointer 0
+                                                   :initial-element nil))
+
+(defparameter *prune-stats-by-production* (make-hash-table :test 'equal))
+
+(defun reset-prune-stats ()
+  "Resets the pruning statistic arrays"
+  (setf *prune-stats-by-hole* (make-array 10 :adjustable t
+                                             :fill-pointer 0
+                                             :initial-element nil))
+  (setf *prune-stats-by-size* (make-array 10 :adjustable t
+                                             :fill-pointer 0
+                                             :initial-element nil))
+  (setf *prune-stats-by-production* (make-hash-table :test 'equal)))
+
+(defun mark-is-pruned (program trace pruned?)
+  "Marks if a partial program is pruned or not"
+  (flet ((get-cell (vec ix)
+           "Extends the vector VEC if needed and returns the cell at IX."
+           (let ((max-length (first (array-dimensions vec))) ; Avoid fill pointer
+                 (fill-pointer (fill-pointer vec)))
+             (when (>= ix max-length)
+               (adjust-array vec (* 2 max-length) :initial-element nil))
+             (when (>= ix fill-pointer)
+               (setf (fill-pointer vec) (1+ ix))))
+           (unless (consp (aref vec ix))
+             (setf (aref vec ix) (cons 0 0)))
+           (aref vec ix))
+         (get-#-cell (ht key)
+           (multiple-value-bind (cell found?)
+               (gethash key ht)
+             (unless found?
+               (setf cell (cons 0 0))
+               (setf (gethash key ht) cell))
+             cell))
+         (trace-key ()
+           "Gets a key from the trace"
+           (case (length trace)
+             (0 nil)
+             (1 (smt:identifier-string (g:name (first trace))))
+             (otherwise
+              (str:concat
+               (smt:identifier-string (g:name (second trace)))
+               "/"
+               (smt:identifier-string (g:name (first trace))))))))
+
+    (let ((size-cell (get-cell *prune-stats-by-size* (ast:program-size program)))
+          (hole-cell (get-cell *prune-stats-by-hole* (ast:hole-count program)))
+          (prod-cell (get-#-cell *prune-stats-by-production* (trace-key))))
+      (incf (cdr size-cell))
+      (incf (cdr hole-cell))
+      (incf (cdr prod-cell))
+      (when pruned?
+        (incf (car size-cell))
+        (incf (car hole-cell))
+        (incf (car prod-cell))))))
+
+(defun report-prune-stats ()
+  "Prints out statistics about pruning"
+  (format t "Prune by Hole Count~%------------------~%")
+  (loop for ix below (fill-pointer *prune-stats-by-hole*)
+        for cell = (aref *prune-stats-by-hole* ix)
+        if (null cell)
+          do (format t "[~2d] <none>~%" ix)
+        else
+          do (format t "[~2d] ~d/~d (~,2f%)~%" ix (car cell) (cdr cell)
+                     (* 100 (/ (car cell) (cdr cell)))))
+
+  (format t "Prune by Program Size~%------------------~%")
+  (loop for ix below (fill-pointer *prune-stats-by-size*)
+        for cell = (aref *prune-stats-by-size* ix)
+        if (null cell)
+          do (format t "[~2d] <none>~%" ix)
+        else
+          do (format t "[~2d] ~d/~d (~,2f%)~%" ix (car cell) (cdr cell)
+                     (* 100 (/ (car cell) (cdr cell)))))
+
+  (format t "Prune by Production~%------------------~%")
+  (loop for prod being the hash-keys of *prune-stats-by-production*
+        for cell = (gethash prod *prune-stats-by-production*)
+        if (null cell)
+          do (format t "[~a] <none>~%" prod)
+        else
+          do (format t "[~a] ~d/~d (~,2f%)~%" prod
+                     (car cell) (cdr cell)
+                     (* 100 (/ (car cell) (cdr cell))))))
+
+(defvar *use-new-pq* nil)
+(defvar *pq-impl* nil)
+(defvar *initial-queue-size* nil)
 
 (defmethod tdp:synthesize* ((obj (eql 'top-down-initialize))
                             nt
                             (info initial-information))
-  (let ((pq (priority-queue:make-pqueue #'<))
+  (format t "~&-----~%Defer Prune: ~a~%Remove Pruned: ~a~%-----~%"
+          *defer-prune* *remove-pruned*)
+  (when *collect-prune-stats* (reset-prune-stats))
+  (let ((pq (if *pq-impl*
+                (make-queue *pq-impl* *initial-queue-size*)
+                (if *use-new-pq*
+                    (make-instance 'program-queue)
+                    (make-instance 'pq-program-queue))))
         (initial-nt (g:initial-non-terminal tdp:*grammar*))
-        (timer (get-internal-real-time)))
-    (priority-queue:pqueue-push
-     (make-instance 'pq-entry
-                    :program (make-instance 'ast:program-hole
-                                            :non-terminal initial-nt)
-                    :has-hole? t
-                    :size 0)
-     0
-     pq)
+        (timer (get-internal-real-time))
+        (prune-strategy (setup-prune-strategy)))
+    (enqueue-program pq
+                     (make-instance 'ast:program-hole :non-terminal initial-nt)
+                     0
+                     t
+                     nil)
 
-    (loop for candidate = (priority-queue:pqueue-pop pq) doing
-      (assert (ast:has-hole? candidate))
-      (when (> (get-internal-real-time) timer)
-        (incf timer (* internal-time-units-per-second 5))
-        (format *trace-output* "~&; PQ Depth: ~a~%"
-                (priority-queue:pqueue-length pq)))
-      (let ((next (tdp:synthesize initial-nt
-                                  (make-instance 'downward-information
-                                                 :current-node
-                                                 (program candidate)))))
-        (assert (has-change? next))
-        (dolist (pr (program-records next))
-          (let ((size (ast:program-size (program pr))))
-            (if (ast:has-hole? pr)
-                (if (try-prune-candidate pr)
-                    (format t "~&PRUNE! ~a~%" (program pr))
-                    (priority-queue:pqueue-push
-                     (make-instance 'pq-entry
-                                    :program (program pr)
-                                    :has-hole? t
-                                    :size size)
-                     size
-                     pq))
-                (when (semgus:check-program tdp:*semgus-problem* (program pr))
-                  (format t "FOUND: [~a] ~a~%" size (program pr))
-                  (return-from tdp:synthesize*
-                    (make-instance 'vsa:leaf-program-node
-                                   :program (program pr)))))))))))
+    (loop
+      (multiple-value-bind (candidate size has-hole? trace)
+          (dequeue-program pq)
+        (declare (ignore size))
+        (assert has-hole?)
+        (when (> (get-internal-real-time) timer)
+          (incf timer (* internal-time-units-per-second 5))
+          (format *trace-output* "~&; PQ Depth: ~a~%" (depth pq)))
+        (unless (and *defer-prune*
+                     (try-prune-candidate candidate trace prune-strategy)
+                     *remove-pruned*)
+          (let ((next (tdp:synthesize initial-nt
+                                      (make-instance 'downward-information
+                                                     :current-node
+                                                     candidate))))
+            (assert (has-change? next))
+            (dolist (pr (program-records next))
+              (let ((size (ast:program-size (program pr))))
+                (if (ast:has-hole? pr)
+                    (progn
+                      (incf ast:*candidate-partial-programs*)
+                      (if (and (not *defer-prune*)
+                               (try-prune-candidate (program pr) (hole-trace pr)
+                                                    prune-strategy)
+                               *remove-pruned*)
+                          nil
+                          (enqueue-program pq
+                                           (program pr)
+                                           size
+                                           t
+                                           (hole-trace pr))))
+                  (progn
+                    (incf ast:*candidate-concrete-programs*)
+                    (when (= 1 (incf (getf ast:*concrete-candidates-by-size* size 0)))
+                      (ast:add-checkpoint size))
+                    (ast:trace-program (program pr))
+                    (when (semgus:check-program tdp:*semgus-problem* (program pr))
+                      (format t "FOUND: [~a] ~a~%" size (program pr))
+                      (when *collect-prune-stats* (report-prune-stats))
+                      (return-from tdp:synthesize*
+                        (make-instance 'vsa:leaf-program-node
+                                       :program (program pr))))))))))))))
 
 ;;;
 ;;; Hole-filling task for productions

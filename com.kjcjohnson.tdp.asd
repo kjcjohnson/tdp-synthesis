@@ -59,12 +59,15 @@
 
 (asdf:defsystem "com.kjcjohnson.tdp/top-down-enum"
   :depends-on ("com.kjcjohnson.tdp/main"
-               "priority-queue")
+               "priority-queue"
+               "damn-fast-priority-queue"
+               "damn-fast-stable-priority-queue")
   :pathname "top-down-enum"
   :serial t
   :components ((:file "package")
                (:file "info")
                (:file "algorithm")
+               (:file "queue")
                (:file "tasks")
                (:file "main")))
 

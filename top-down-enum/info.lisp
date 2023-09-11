@@ -27,7 +27,11 @@
    (has-hole?
     :initarg :has-hole?
     :reader ast:has-hole?
-    :documentation "Whether or not this program has a hole")))
+    :documentation "Whether or not this program has a hole")
+   (trace
+    :initarg :trace
+    :reader hole-trace
+    :documentation "Trace of productions from the filled hole to the root")))
 
 (defmethod initialize-instance :after ((pr program-record)
                                        &key
@@ -41,6 +45,9 @@
     (when (consp holiness)
       (setf holiness (some #'identity holiness)))
     (setf (slot-value pr 'has-hole?) holiness))
+
+  (unless (slot-boundp pr 'trace)
+    (setf (slot-value pr 'trace) (list production)))
 
   (unless (slot-boundp pr 'program)
     (setf (slot-value pr 'program)
@@ -56,7 +63,7 @@
    (has-change?
     :initarg :has-change?
     :reader has-change?
-    :documentation "Whether or not the upcoming (singleton) program has changed 
+    :documentation "Whether or not the upcoming (singleton) program has changed
 from the program being traversed. Set only if holes have been filled out.")))
 
 (defun upward-information/no-change (program)
@@ -91,7 +98,14 @@ can be either program nodes or upward information."
              (upward-information
               (map 'list #'ast:has-hole? (program-records child)))
              (ast:program-atom
-              (list (ast:has-hole? child))))))
+              (list (ast:has-hole? child)))))
+         (get-trace-list (child)
+           "Gets traces"
+           (etypecase child
+             (upward-information
+              (map 'list #'hole-trace (program-records child)))
+             (ast:program-atom
+              (list nil)))))
     (case (count t children :key #'is-changed?)
       (0 ;; No changes to any children
        (upward-information/no-change (current-node downward-info)))
@@ -100,19 +114,33 @@ can be either program nodes or upward information."
        (let* ((child-programs (map 'list #'get-program-list children))
               (all-child-programs (tdp:all-cart-prod child-programs))
               (child-holiness (map 'list #'get-holiness-list children))
-              (all-child-holiness (tdp:all-cart-prod child-holiness)))
+              (all-child-holiness (tdp:all-cart-prod child-holiness))
+              (child-traces (map 'list #'get-trace-list children))
+              (all-child-traces (tdp:all-cart-prod child-traces))
+              (current-production (ast:production (current-node downward-info))))
          (make-instance 'upward-information
                         :has-change? t
                         :program-records
-                        (map 'list #'(lambda (children holiness)
+                        (map 'list #'(lambda (children holiness traces)
+                                       (when (< 1 (count t traces
+                                                         :key (*:compose
+                                                               #'*:true
+                                                               #'car)))
+                                         (break))
                                        (make-instance 'program-record
                                                       :holiness holiness
-                                                      :production (ast:production
-                                                                   (current-node
-                                                                    downward-info))
+                                                      :trace (append
+                                                              (find t traces
+                                                                    :key (*:compose
+                                                                          #'*:true
+                                                                          #'car))
+                                                              (list
+                                                               current-production))
+                                                      :production current-production
                                                       :children children))
                              all-child-programs
-                             all-child-holiness))))
+                             all-child-holiness
+                             all-child-traces))))
 
       (otherwise
        (error "Multiple changed children when extending upward information")))))
