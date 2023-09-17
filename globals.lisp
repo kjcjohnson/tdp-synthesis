@@ -38,8 +38,8 @@ run will continue. Otherwise, an error condition is signalled.")
                      (triggering-usage condition)
                      (memory-usage-limit condition)
                      (post-gc-usage condition)
-                     (post-gc-usage-limit condition)))))   
-    
+                     (post-gc-usage-limit condition)))))
+
 
 (defmacro with-depth-layer (&body body)
   "Increments the current depth layer."
@@ -53,7 +53,7 @@ run will continue. Otherwise, an error condition is signalled.")
     (if (null res)
         (setf *init-hooks* (acons name hook *init-hooks*))
         (setf (cdr res) hook))))
-  
+
 (defmacro define-init-hook (name &body body)
   "Defines an initialization hook for the TDP algorithm."
   `(add-init-hook ',name (lambda () ,@body)))
@@ -100,7 +100,7 @@ run will continue. Otherwise, an error condition is signalled.")
 (defmacro with-next-production ((production) &body body)
   "Binds the production under consideration to the current program"
   `(let ((*current-program* (cons ,production *current-program*)))
-     (maybe-print-program)
+     #+tdp-verbose(maybe-print-program)
      ,@body))
 
 (defun tdp (algorithm grammar semantics info &key (print t))
@@ -111,7 +111,7 @@ run will continue. Otherwise, an error condition is signalled.")
 
     (let ((result (synthesize (g:initial-non-terminal *grammar*) info))
           (result-list nil))
-      
+
       (vsa:do-programs (p result)
         (push p result-list)
         (when print
