@@ -267,8 +267,15 @@ not have any valid ways to fill its holes and can be safely pruned."
                      :has-hole? t
                      :children (map 'list
                                     #'(lambda (nt)
-                                        (make-instance 'ast:program-hole
-                                                       :non-terminal nt))
+                                        (let ((prods
+                                                (g:productions-for-instance
+                                                 (semgus:grammar tdp:*semgus-problem*)
+                                                 nt)))
+                                          (if (= 1 (length prods))
+                                              (program
+                                               (tdp:synthesize (first prods) info))
+                                              (make-instance 'ast:program-hole
+                                                             :non-terminal nt))))
                                     (g:occurrences prod)))))
 ;;;
 ;;; Inferring.
