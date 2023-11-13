@@ -262,21 +262,26 @@ not have any valid ways to fill its holes and can be safely pruned."
                      :production prod
                      :has-hole? nil
                      :children nil)
-      (make-instance 'program-record
-                     :production prod
-                     :has-hole? t
-                     :children (map 'list
-                                    #'(lambda (nt)
-                                        (let ((prods
-                                                (g:productions-for-instance
-                                                 (semgus:grammar tdp:*semgus-problem*)
-                                                 nt)))
-                                          (if (= 1 (length prods))
-                                              (program
-                                               (tdp:synthesize (first prods) info))
-                                              (make-instance 'ast:program-hole
-                                                             :non-terminal nt))))
-                                    (g:occurrences prod)))))
+      (let* ((has-hole? t)
+             (children (map 'list
+                            #'(lambda (nt)
+                                (let ((prods
+                                        (g:productions-for-instance
+                                         (semgus:grammar tdp:*semgus-problem*)
+                                         nt)))
+                                  (if (= 1 (length prods))
+                                      (let ((subprog (tdp:synthesize (first prods)
+                                                                     info)))
+                                        (unless (ast:has-hole? subprog)
+                                          (setf has-hole? nil))
+                                        (program subprog))
+                                      (make-instance 'ast:program-hole
+                                                     :non-terminal nt))))
+                            (g:occurrences prod))))
+        (make-instance 'program-record
+                       :production prod
+                       :has-hole? has-hole?
+                       :children children))))
 ;;;
 ;;; Inferring.
 ;;;
