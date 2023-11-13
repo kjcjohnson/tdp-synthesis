@@ -104,5 +104,5 @@
                         generate-interval-semantics
                         queue)
                 trace)
-    (semgus:maybe-with-cegis (semgus-problem)
+    (semgus:maybe-with-cegis (solver semgus-problem)
       (tde:top-down-enum-solve semgus-problem))))

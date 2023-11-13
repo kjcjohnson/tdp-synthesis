@@ -18,5 +18,5 @@
                                      :default nil)))
 
 (defmethod solve-problem ((solver (eql :duet)) semgus-problem &key depth)
-  (semgus:maybe-with-cegis (semgus-problem)
+  (semgus:maybe-with-cegis (solver semgus-problem)
     (duet:duet-solve semgus-problem :depth depth)))

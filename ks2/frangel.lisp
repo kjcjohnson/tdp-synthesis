@@ -28,7 +28,7 @@
   :options (list))
 
 (defmethod solve-problem ((solver (eql :frangel)) semgus-problem &key)
-  (semgus:maybe-with-cegis (semgus-problem)
+  (semgus:maybe-with-cegis (solver semgus-problem)
     (frangel:fragment-search semgus-problem)))
 
 ;;;
@@ -45,5 +45,5 @@
   :options (list))
 
 (defmethod solve-problem ((solver (eql :random)) semgus-problem &key)
-  (semgus:maybe-with-cegis (semgus-problem)
+  (semgus:maybe-with-cegis (solver semgus-problem)
     (frangel:random-search semgus-problem)))
