@@ -12,6 +12,7 @@
                     (#:chc #:com.kjcjohnson.synthkit.semgus.chc)
                     (#:smt #:com.kjcjohnson.synthkit.smt)
                     (#:spec #:com.kjcjohnson.synthkit.specification)
+                    (#:u #:com.kjcjohnson.synthkit.utilities)
                     (#:* #:serapeum/bundle)
                     (#:? #:trivia)
                     (#:kl #:com.kjcjohnson.kale)

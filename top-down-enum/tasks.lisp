@@ -3,6 +3,8 @@
 ;;;;
 (in-package #:com.kjcjohnson.tdp.top-down-enum)
 
+(u:declare-timed-section *enumerate-section* "enum stats")
+
 (defclass pq-entry ()
   ((program
     :initarg :program
@@ -219,10 +221,11 @@ not have any valid ways to fill its holes and can be safely pruned."
         (unless (and *defer-prune*
                      (try-prune-candidate candidate trace prune-strategy)
                      *remove-pruned*)
-          (let ((next (tdp:synthesize initial-nt
-                                      (make-instance 'downward-information
-                                                     :current-node
-                                                     candidate))))
+          (let ((next (u:with-timed-section (*enumerate-section*)
+                        (tdp:synthesize initial-nt
+                                        (make-instance 'downward-information
+                                                       :current-node
+                                                       candidate)))))
             (assert (has-change? next))
             (dolist (pr (program-records next))
               (let ((size (ast:program-size (program pr))))
@@ -245,8 +248,13 @@ not have any valid ways to fill its holes and can be safely pruned."
                       (ast:add-checkpoint size))
                     (ast:trace-program (program pr))
                     (when (semgus:check-program tdp:*semgus-problem* (program pr))
-                      (format t "FOUND: [~a] ~a~%" size (program pr))
+                      (format t "; FOUND: [~a] ~a~%" size (program pr))
                       (when *collect-prune-stats* (report-prune-stats))
+                      (format t "~&; ENUM: TIME: ~,2fs; GC: ~,2fs; ALLOC: ~,3f MiB~%"
+                              (u:get-timed-section-real-time *enumerate-section*)
+                              (u:get-timed-section-gc-time *enumerate-section*)
+                              (u:get-timed-section-bytes-consed *enumerate-section*
+                                                                :unit "MiB"))
                       (return-from tdp:synthesize*
                         (make-instance 'vsa:leaf-program-node
                                        :program (program pr))))))))))))))

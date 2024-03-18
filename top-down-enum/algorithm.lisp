@@ -3,7 +3,10 @@
 ;;;;
 (in-package #:com.kjcjohnson.tdp.top-down-enum)
 
-(defclass top-down-enum-algorithm () ())
+(defclass top-down-enum-algorithm ()
+  ((use-shin-task :initarg :use-shin-task
+                  :reader use-shin-task))
+  (:default-initargs :use-shin-task nil))
 
 (defmethod tdp:synthesize-dispatch ((algorithm top-down-enum-algorithm)
                                     (nt g:non-terminal)
@@ -22,4 +25,6 @@
 (defmethod tdp:synthesize-dispatch ((algorithm top-down-enum-algorithm)
                                     (nt g:non-terminal)
                                     (info initial-information))
-  'top-down-initialize)
+  (if (use-shin-task algorithm)
+      'top-down-new
+      'top-down-initialize))

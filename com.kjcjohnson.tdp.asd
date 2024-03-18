@@ -69,6 +69,8 @@
                (:file "algorithm")
                (:file "queue")
                (:file "tasks")
+               (:file "shin-program-record")
+               (:file "shin-tasks")
                (:file "main")))
 
 (asdf:defsystem "com.kjcjohnson.tdp/test"

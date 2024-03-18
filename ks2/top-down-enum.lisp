@@ -68,10 +68,21 @@
              :type :boolean
              :default nil)
             (s-api:make-solver-option
+             :keyword :percent-prune
+             :name "Percentage to attempt prunes (0 - 100)"
+             :type :number
+             :default 100)
+            (s-api:make-solver-option
              :keyword :initial-queue-size
              :name "Initial queue size"
              :description "Initial storage size of the queue, if supported by the queue"
-             :type :number)))
+             :type :number)
+            (s-api:make-solver-option
+             :keyword :shin-task
+             :name "Use the new task implementation"
+             :description "Whether or not the optimized enumeration algorithm should be used"
+             :type :boolean
+             :default nil)))
 
 (defmethod solve-problem ((solver top-down-enumerator) semgus-problem
                           &key (defer-prune t) prune-stats new-queue queue
@@ -79,18 +90,23 @@
                             prune-max-holes prune-min-holes
                             (no-prune-1 nil) (no-prune-2 nil)
                             (overhead-only nil) (trace nil)
-                            initial-queue-size)
+                            (percent-prune 100) initial-queue-size (shin-task nil))
+  (declare (type (or null fixnum) prune-max-holes prune-min-holes percent-prune))
   (setf tde::*defer-prune* defer-prune)
   (setf tde::*collect-prune-stats* prune-stats)
   (setf tde::*should-prune-hook* #'(lambda (program)
-                                     (if (or prune-max-holes prune-min-holes)
-                                         (let ((hc (ast:hole-count program)))
-                                           (and
-                                            (or (not prune-max-holes)
-                                                (<= hc prune-max-holes))
-                                            (or (not prune-min-holes)
-                                                (>= hc prune-min-holes))))
-                                         t)))
+                                     (declare (optimize (speed 3)))
+                                     (and
+                                      (< (random 100) percent-prune)
+                                      (if (or prune-max-holes prune-min-holes)
+                                          (let ((hc (ast:hole-count program)))
+                                            (declare (type fixnum hc))
+                                            (and
+                                             (or (not prune-max-holes)
+                                                 (<= hc prune-max-holes))
+                                             (or (not prune-min-holes)
+                                                 (>= hc prune-min-holes))))
+                                          t))))
   (setf tde::*use-new-pq* new-queue)
   (setf tde::*no-prune-1* no-prune-1)
   (setf tde::*no-prune-2* no-prune-2)
@@ -104,5 +120,5 @@
                         generate-interval-semantics
                         queue)
                 trace)
-    (semgus:maybe-with-cegis (solver semgus-problem)
-      (tde:top-down-enum-solve semgus-problem))))
+               (semgus:maybe-with-cegis (solver semgus-problem)
+                 (tde:top-down-enum-solve semgus-problem :shin-task shin-task))))
