@@ -27,10 +27,14 @@
   (when *collect-prune-stats* (reset-prune-stats))
   (let ((pq (damn-fast-stable-priority-queue:make-queue))
         (timer (get-internal-real-time))
-        (prune-strategy (setup-prune-strategy)))
+        (prune-strategy (setup-prune-strategy))
+        (fragments nil))
 
-    ;; Enqueue the initial entry - just a single hole
-    (enqueue-pe pq (get-initial-entry tdp:*grammar*))
+    (multiple-value-bind (initial-pe frags)
+        (get-initial-entry tdp:*grammar*)
+      ;; Enqueue the initial entry - just a single hole
+      (enqueue-pe pq initial-pe)
+      (setf fragments frags))
 
     (loop
       (let ((candidate-pe (dequeue-pe pq))
@@ -46,7 +50,8 @@
                                           trace prune-strategy)
                      *remove-pruned*)
           (let ((next (u:with-timed-section (*enumerate-section*)
-                        (expand-next-hole candidate-pe tdp:*grammar*))))
+                        (expand-next-hole candidate-pe fragments))))
+
             ;;(assert (has-change? next))
             (dolist (pe next)
               (let ((size (pe-size pe))
