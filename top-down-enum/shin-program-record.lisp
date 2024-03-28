@@ -71,10 +71,10 @@
            (collect-nts-and-traces (frag &optional curr-trace)
              "Collects a list of "
              (if (typep frag 'ast:program-hole)
-                 (list (cons (ast:non-terminal frag) curr-trace))
+                 (list (cons (ast:non-terminal frag) (reverse curr-trace)))
                  (loop for i from 0 below (g:arity (ast:production frag))
                        appending (collect-nts-and-traces (ast:nth-child i frag)
-                                                         (cons i (reverse curr-trace)))))))
+                                                         (cons i curr-trace))))))
 
     (let ((frag-hash (make-hash-table)))
       (g:do-non-terminals (nt grammar)
