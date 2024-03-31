@@ -270,7 +270,7 @@ not have any valid ways to fill its holes and can be safely pruned."
                      :production prod
                      :has-hole? nil
                      :children nil)
-      (let* ((has-hole? t)
+      (let* ((has-hole? nil)
              (children (map 'list
                             #'(lambda (nt)
                                 (let ((prods
@@ -280,11 +280,13 @@ not have any valid ways to fill its holes and can be safely pruned."
                                   (if (= 1 (length prods))
                                       (let ((subprog (tdp:synthesize (first prods)
                                                                      info)))
-                                        (unless (ast:has-hole? subprog)
-                                          (setf has-hole? nil))
+                                        (when (ast:has-hole? subprog)
+                                          (setf has-hole? t))
                                         (program subprog))
-                                      (make-instance 'ast:program-hole
-                                                     :non-terminal nt))))
+                                      (progn
+                                        (setf has-hole? t)
+                                        (make-instance 'ast:program-hole
+                                                       :non-terminal nt)))))
                             (g:occurrences prod))))
         (make-instance 'program-record
                        :production prod
