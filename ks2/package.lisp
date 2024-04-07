@@ -7,7 +7,5 @@
                     (#:spec #:com.kjcjohnson.synthkit.specification)
                     (#:semgus #:com.kjcjohnson.synthkit.semgus)
                     (#:ast #:com.kjcjohnson.synthkit.ast)
-                    (#:enum #:com.kjcjohnson.tdp.enumerative)
-                    (#:duet #:com.kjcjohnson.tdp.duet)
                     (#:tde #:com.kjcjohnson.tdp.top-down-enum))
   (:export #:top-down-enumerator))
