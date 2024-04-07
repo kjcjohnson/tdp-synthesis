@@ -43,6 +43,7 @@ CONTEXT-INFO. Note that CONTEXT-INFO includes initial information as well as inf
 about already-computed programs."))
 
 (defgeneric derive (prod child-index program-set outer-spec context-info)
+  (:method (prod child-index program-set outer-spec context-info) nil)
   (:documentation "Derives new information about a child of a production."))
 
 ;;;
