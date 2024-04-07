@@ -92,7 +92,6 @@
 
 (asdf:defsystem "com.kjcjohnson.tdp/ks2"
   :depends-on ("com.kjcjohnson.tdp"
-               "com.kjcjohnson.frangel"
                "com.kjcjohnson.ks2/solver-api")
   :pathname "ks2"
   :serial t
@@ -100,5 +99,4 @@
                (:file "utility")
                (:file "top-down-enum")
                (:file "duet")
-               (:file "frangel")
                (:file "bottom-up-enum")))

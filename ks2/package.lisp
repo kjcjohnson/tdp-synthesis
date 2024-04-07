@@ -9,6 +9,5 @@
                     (#:ast #:com.kjcjohnson.synthkit.ast)
                     (#:enum #:com.kjcjohnson.tdp.enumerative)
                     (#:duet #:com.kjcjohnson.tdp.duet)
-                    (#:frangel #:com.kjcjohnson.frangel)
                     (#:tde #:com.kjcjohnson.tdp.top-down-enum))
   (:export #:top-down-enumerator))
